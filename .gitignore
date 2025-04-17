@@ -1,0 +1,15 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Images
+images/
+
+# Venv
+venv310/
+
+.env
