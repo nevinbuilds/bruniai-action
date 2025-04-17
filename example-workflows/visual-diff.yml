@@ -1,0 +1,29 @@
+name: Visual Regression Test
+
+on:
+  pull_request:
+    branches:
+      - main # or your default branch
+
+jobs:
+  visual-test:
+    name: Run Visual Diff
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run AI Visual Diff Action
+        uses: ./.github/actions/ai-visual-diff
+        with:
+          base-url: "https://www.brunivisual.com/"
+          pr-url: "https://bruni-website-git-${{ steps.branch-name.outputs.branch_name }}-nevinbuilds.vercel.app"
+          threshold: 0.1
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
