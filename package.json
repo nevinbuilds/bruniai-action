@@ -10,7 +10,6 @@
     "@actions/github": "^5.1.1",
     "@playwright/mcp": "^0.0.13",
     "@types/pngjs": "^6.0.5",
-    "opencv.js": "^1.2.1",
     "pixelmatch": "^7.1.0",
     "playwright": "^1.42.1",
     "pngjs": "^7.0.0"
