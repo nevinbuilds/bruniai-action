@@ -1,6 +1,9 @@
 name: "AI Visual Testing"
 description: "Detects UI changes in PRs with AI-powered visual testing"
 author: "Joao Garin"
+branding:
+  icon: "eye"
+  color: "purple"
 inputs:
   base-url:
     description: "URL of the baseline site (e.g., staging)"
