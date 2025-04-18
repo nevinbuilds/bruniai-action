@@ -5,7 +5,7 @@ import logging
 import argparse
 from functools import wraps
 from contextlib import asynccontextmanager
-
+import json
 from dotenv import load_dotenv
 import openai
 from openai import OpenAIError, RateLimitError
@@ -23,10 +23,37 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("agent-runner")
 
 # ----------------- Post PR Comment -------------------
+
+def get_pr_number_from_event():
+    event_path = os.getenv("GITHUB_EVENT_PATH")
+    if not event_path or not os.path.exists(event_path):
+        logger.warning("GITHUB_EVENT_PATH not found.")
+        return None
+
+    try:
+        with open(event_path, 'r') as f:
+            event = json.load(f)
+
+        pr_number = (
+            event.get("pull_request", {}).get("number") or
+            event.get("issue", {}).get("number")
+        )
+
+        if not pr_number:
+            logger.warning("PR number not found in event payload.")
+        return pr_number
+    except Exception as e:
+        logger.error("Error reading PR number from event: %s", e)
+        return None
+
 def post_pr_comment(summary: str):
     github_token = os.getenv("GITHUB_TOKEN")
     repo = os.getenv("GITHUB_REPOSITORY")  # e.g. 'org/repo'
-    pr_number = os.getenv("PR_NUMBER")  # Must be set in your workflow
+    pr_number = os.getenv("PR_NUMBER") or get_pr_number_from_event()
+
+    logger.info(f"GITHUB_TOKEN: {github_token}")
+    logger.info(f"GITHUB_REPOSITORY: {repo}")
+    logger.info(f"PR_NUMBER: {pr_number}")
 
     if not all([github_token, repo, pr_number]):
         logger.warning("Missing GitHub context, skipping PR comment.")
