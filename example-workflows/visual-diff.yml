@@ -21,9 +21,13 @@ jobs:
 
       - name: Run AI Visual Diff Action
         uses: ./.github/actions/ai-visual-diff
+        # uses: nevinbuilds/bruniai-action@v1
         with:
           base-url: "https://www.brunivisual.com/"
           pr-url: "https://bruni-website-git-${{ steps.branch-name.outputs.branch_name }}-nevinbuilds.vercel.app"
           threshold: 0.1
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ env.PR_NUMBER }}
