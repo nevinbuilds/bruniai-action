@@ -8,16 +8,12 @@ from contextlib import asynccontextmanager
 import json
 from dotenv import load_dotenv
 import openai
-from openai import OpenAIError, RateLimitError
+from openai import RateLimitError
 from agents import Agent, Runner
 from agents.mcp.server import MCPServerSse, MCPServerSseParams
-import anyio
-from anyio import create_task_group, create_memory_object_stream
 import requests
 from PIL import Image, ImageChops
 import numpy as np
-import tempfile
-from io import BytesIO
 import subprocess
 
 # ----------------- Setup -------------------
