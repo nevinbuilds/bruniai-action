@@ -14,6 +14,11 @@ from agents.mcp.server import MCPServerSse, MCPServerSseParams
 import anyio
 from anyio import create_task_group, create_memory_object_stream
 import requests
+from PIL import Image, ImageChops
+import numpy as np
+import tempfile
+from io import BytesIO
+import subprocess
 
 # ----------------- Setup -------------------
 load_dotenv()
@@ -21,6 +26,47 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("agent-runner")
+
+# Get the GitHub workspace directory for absolute paths
+GITHUB_WORKSPACE = os.getenv("GITHUB_WORKSPACE", os.getcwd())
+logger.info(f"GitHub workspace: {GITHUB_WORKSPACE}")
+
+def generate_diff_image(before_path, after_path, diff_output_path):
+    # Process only local files
+    img1 = Image.open(before_path).convert('RGB')
+    img2 = Image.open(after_path).convert('RGB')
+
+    # Create a diff image
+    diff = ImageChops.difference(img1, img2)
+
+    # Optional: Highlight the diff more (e.g. multiply intensity)
+    diff_np = np.array(diff)
+    mask = (diff_np != 0).any(axis=2)
+    diff_np[mask] = [255, 0, 0]  # Red highlight
+    diff_highlight = Image.fromarray(diff_np)
+
+    # Save the result
+    diff_highlight.save(diff_output_path)
+    print(f"Diff image saved at: {diff_output_path}")
+
+def take_screenshot_with_playwright(url, output_path):
+    """Use Playwright directly to take a screenshot."""
+    try:
+        logger.info(f"Taking screenshot of {url} with Playwright...")
+        result = subprocess.run([
+            "npx", "playwright", "screenshot",
+            "--device", "Desktop Chrome",
+            "--full-page",
+            url, output_path
+        ], capture_output=True, text=True, check=True)
+        logger.info(f"Screenshot saved at {output_path}")
+        return True
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to take screenshot: {e.stderr}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error taking screenshot: {e}")
+        return False
 
 # ----------------- Post PR Comment -------------------
 
@@ -125,6 +171,33 @@ async def main():
     parser.add_argument('--base-url', required=True, help='Base URL to compare against')
     parser.add_argument('--pr-url', required=True, help='PR URL to compare')
     args = parser.parse_args()
+
+    # Ensure the images directory exists in the workspace
+    images_dir = os.path.join(GITHUB_WORKSPACE, "images")
+    os.makedirs(images_dir, exist_ok=True)
+    logger.info(f"Images directory created at {images_dir}")
+
+    # Define screenshot paths with absolute paths
+    base_screenshot = os.path.join(images_dir, "base_screenshot.png")
+    pr_screenshot = os.path.join(images_dir, "pr_screenshot.png")
+    diff_output_path = os.path.join(images_dir, "diff.png")
+
+    logger.info(f"Base screenshot path: {base_screenshot}")
+    logger.info(f"PR screenshot path: {pr_screenshot}")
+    logger.info(f"Diff output path: {diff_output_path}")
+
+    # Take screenshots with Playwright directly
+    base_success = take_screenshot_with_playwright(args.base_url, base_screenshot)
+    pr_success = take_screenshot_with_playwright(args.pr_url, pr_screenshot)
+
+    # Generate diff if screenshots were successful
+    if base_success and pr_success:
+        logger.info("🖼️ Screenshots captured, generating diff image...")
+        generate_diff_image(base_screenshot, pr_screenshot, diff_output_path)
+        logger.info(f"🔍 Diff image saved at: {diff_output_path}")
+    else:
+        logger.error("Failed to capture one or both screenshots")
+        return
 
     async with managed_mcp_server() as mcp_server:
         try:
