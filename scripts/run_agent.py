@@ -35,14 +35,22 @@ def generate_diff_image(before_path, after_path, diff_output_path):
     # Create a diff image
     diff = ImageChops.difference(img1, img2)
 
-    # Optional: Highlight the diff more (e.g. multiply intensity)
+    # Create a mask of non-zero differences
     diff_np = np.array(diff)
     mask = (diff_np != 0).any(axis=2)
-    diff_np[mask] = [255, 0, 0]  # Red highlight
-    diff_highlight = Image.fromarray(diff_np)
 
-    # Save the result
-    diff_highlight.save(diff_output_path)
+    # Convert mask to RGBA format for transparency
+    result_np = np.zeros((img1.size[1], img1.size[0], 4), dtype=np.uint8)
+
+    # Set red color with full opacity where differences exist
+    result_np[mask, 0] = 255  # R channel
+    result_np[mask, 3] = 255  # Alpha channel (fully opaque)
+
+    # Create final image from numpy array
+    diff_highlight = Image.fromarray(result_np, 'RGBA')
+
+    # Save the result as PNG to preserve transparency
+    diff_highlight.save(diff_output_path, format='PNG')
     print(f"Diff image saved at: {diff_output_path}")
 
 def take_screenshot_with_playwright(url, output_path):
