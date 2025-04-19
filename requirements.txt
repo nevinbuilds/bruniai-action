@@ -4,3 +4,5 @@ aiohttp>=3.8.0
 asyncio>=3.4.3
 anyio>=3.7.0
 python-dotenv>=1.0.0
+pillow>=11.2.1
+numpy>=2.2.4

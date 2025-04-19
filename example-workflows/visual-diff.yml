@@ -23,9 +23,17 @@ jobs:
         uses: ./.github/actions/ai-visual-diff
         # uses: nevinbuilds/bruniai-action@v1
         with:
-          base-url: "https://www.brunivisual.com/"
-          pr-url: "https://bruni-website-git-${{ steps.branch-name.outputs.branch_name }}-nevinbuilds.vercel.app"
+          base-url: "https://www.example.com/"
+          pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
           threshold: 0.1
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload images as artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-diff-images
+          path: images
+          retention-days: 1
