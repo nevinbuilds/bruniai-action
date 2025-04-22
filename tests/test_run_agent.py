@@ -43,8 +43,8 @@ def sample_images():
     yield {'img1': img1_path, 'img2': img2_path, 'diff': diff_path}
 
     # Cleanup (uncomment if you want to delete the test images after tests)
-    # import shutil
-    # shutil.rmtree(test_images_dir)
+    import shutil
+    shutil.rmtree(test_images_dir)
 
 def test_generate_diff_image(sample_images):
     """Test that diff image generation works correctly."""
