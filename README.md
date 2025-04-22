@@ -29,3 +29,29 @@ python3 scripts/run_agent.py --base-url https://www.brunivisual.com/ --pr-url ht
 ## Add .env openai key
 
 `OPENAI_API_KEY=`
+
+# Running Tests
+
+## Local Testing
+
+You can run tests locally using the provided script:
+
+```bash
+./run_tests.sh
+```
+
+To install dependencies before running tests:
+
+```bash
+./run_tests.sh --install
+```
+
+## Continuous Integration
+
+Tests automatically run on GitHub Actions for:
+
+- Every push to the main branch
+- Every pull request targeting main
+- Manual triggers via workflow_dispatch
+
+Coverage reports are uploaded to Codecov after successful test runs.
