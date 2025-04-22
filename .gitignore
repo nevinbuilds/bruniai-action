@@ -1,4 +1,3 @@
-
 # Playwright
 node_modules/
 /test-results/
@@ -13,3 +12,13 @@ images/
 venv310/
 
 .env
+
+# Testing
+tests/test_images/
+htmlcov/
+.coverage
+.pytest_cache/
+coverage.xml
+__pycache__/
+*.py[cod]
+*$py.class
