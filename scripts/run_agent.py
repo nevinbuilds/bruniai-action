@@ -32,7 +32,7 @@ def generate_diff_image(before_path, after_path, diff_output_path):
     img1 = Image.open(before_path).convert('RGB')
     img2 = Image.open(after_path).convert('RGB')
 
-     # Ensure images have the same dimensions by resizing the second image to match the first
+    # Ensure images have the same dimensions by resizing the second image to match the first
     if img1.size != img2.size:
         logger.warning(f"Image dimensions don't match: {img1.size} vs {img2.size}. Resizing second image.")
         img2 = img2.resize(img1.size)
@@ -215,7 +215,11 @@ async def main():
                 instructions="""Compare two webpages and report any significant differences.
                 1. First visit the base URL and analyze its content
                 2. Then visit the PR URL and compare it with the base URL
-                3. Report any significant differences in layout, content, or functionality""",
+                3. Check the page in its entirety, from head to footer.
+                4. Scroll all the way to the bottom slowly, pausing at intervals to analyze the content.
+                5. Interact with any collapsible sections, tabs, or interactive elements to ensure hidden content is also compared.
+                6. Check responsive behavior by adjusting the viewport size if possible.
+                7. Report any significant differences in layout, content, or functionality.""",
                 mcp_servers=[mcp_server]
             )
 
@@ -228,6 +232,16 @@ async def main():
             - Content differences
             - Functional changes
             - Any broken elements or errors
+            - Missing elements
+            - Hidden content in tabs, dropdowns, or other interactive elements
+            - Responsive behavior if possible
+            - Check the page from head to footer, scrolling slowly to analyze everything
+
+            Make sure to:
+            - Scroll through the entire page slowly
+            - Click on any expandable sections
+            - Test basic interactive elements
+            - Look for differences in both visible and initially hidden content
 
             Provide a detailed comparison report."""
 
