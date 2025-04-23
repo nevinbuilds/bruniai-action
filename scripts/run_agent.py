@@ -32,6 +32,11 @@ def generate_diff_image(before_path, after_path, diff_output_path):
     img1 = Image.open(before_path).convert('RGB')
     img2 = Image.open(after_path).convert('RGB')
 
+    # Ensure images have the same dimensions by resizing the second image to match the first
+    if img1.size != img2.size:
+        logger.warning(f"Image dimensions don't match: {img1.size} vs {img2.size}. Resizing second image.")
+        img2 = img2.resize(img1.size)
+
     # Create a diff image
     diff = ImageChops.difference(img1, img2)
 
@@ -51,7 +56,7 @@ def generate_diff_image(before_path, after_path, diff_output_path):
 
     # Save the result as PNG to preserve transparency
     diff_highlight.save(diff_output_path, format='PNG')
-    print(f"Diff image saved at: {diff_output_path}")
+    logger.info(f"Diff image saved at: {diff_output_path}")
 
 def take_screenshot_with_playwright(url, output_path):
     """Use Playwright directly to take a screenshot."""
