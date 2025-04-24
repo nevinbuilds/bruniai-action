@@ -175,25 +175,193 @@ async def run_comparison(mcp_server, agent, prompt):
         logger.error("Error during comparison: %s", e)
         raise
 
+async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
+    """Analyze both URLs simultaneously, comparing sections side by side."""
+    try:
+        logger.info(f"\n{'='*50}\n🔍 Starting side-by-side analysis\n{'='*50}")
+
+        # First identify sections in both URLs
+        section_agent = Agent(
+            name="Section Analyzer",
+            instructions="""Open both URLs in separate tabs and identify all major sections.
+            Compare the sections between both URLs directly.
+
+            For each URL:
+            1. List all major sections found
+            2. Note their position and structure
+            3. Compare corresponding sections between URLs
+            4. Note any missing or additional sections
+
+            Format the response as:
+            ### Base URL Sections:
+            [List of sections with positions]
+
+            ### Preview URL Sections:
+            [List of sections with positions]
+
+            ### Section Differences:
+            - Missing sections in preview: [list]
+            - New sections in preview: [list]
+            - Sections with different positions: [list]""",
+            mcp_servers=[mcp_server]
+        )
+
+        section_prompt = f"""Please analyze these two URLs side by side:
+        Base URL: {base_url}
+        Preview URL: {preview_url}
+
+        Open both in separate tabs and identify all sections."""
+
+        section_result = await Runner.run(section_agent, section_prompt)
+        sections_analysis = section_result.final_output
+        logger.info(f"\n{'='*50}\n🗺️ Section Analysis:\n{sections_analysis}\n{'='*50}")
+
+        # Now do detailed comparison of each section
+        comparison_agent = Agent(
+            name="Section Comparator",
+            instructions="""Compare each section between the two URLs side by side.
+            For each section that exists in either URL:
+
+            1. Visual Comparison:
+               - Layout differences (position, size, alignment)
+               - Styling differences (colors, fonts, spacing)
+               - Responsive behavior differences
+               - Visual hierarchy changes
+
+            2. Content Comparison:
+               - Text differences
+               - Image/media differences
+               - Missing or additional elements
+               - Content structure changes
+
+            3. Functionality Comparison:
+               - Interactive element differences
+               - Behavior changes
+               - Form/input differences
+               - Navigation changes
+               - Dynamic content differences
+
+            4. UX & Accessibility Comparison:
+               - Focus behavior differences
+               - Keyboard navigation changes
+               - Error handling differences
+               - Loading state differences
+               - User feedback differences
+
+            For each section, format the comparison as:
+            ### [Section Name] Comparison:
+
+            #### Present In:
+            - Base URL: Yes/No
+            - Preview URL: Yes/No
+
+            #### Visual Changes:
+            - [List specific differences]
+
+            #### Content Changes:
+            - [List specific differences]
+
+            #### Functional Changes:
+            - [List specific differences]
+
+            #### UX Changes:
+            - [List specific differences]
+
+            If a section is missing in either URL, clearly note that and explain the impact.""",
+            mcp_servers=[mcp_server]
+        )
+
+        comparison_prompt = f"""With both URLs open in separate tabs:
+        Base URL: {base_url}
+        Preview URL: {preview_url}
+
+        Compare each section side by side following the format in your instructions.
+        Pay special attention to:
+        1. Sections that exist in one URL but not the other
+        2. Sections that have moved positions
+        3. Sections with significant content or functional changes
+
+        {sections_analysis}"""
+
+        comparison_result = await Runner.run(comparison_agent, comparison_prompt)
+        detailed_comparison = comparison_result.final_output
+
+        logger.info(f"\n{'='*50}\n📊 Detailed Section Comparison:\n{detailed_comparison}\n{'='*50}")
+
+        # Generate final summary
+        summary_agent = Agent(
+            name="Summary Generator",
+            instructions="""Generate a clear, actionable summary of all differences found.
+            Categorize changes by severity:
+
+            1. Critical Issues:
+               - Missing essential sections
+               - Broken core functionality
+               - Major content losses
+               - Severe layout breaks
+
+            2. Major Changes:
+               - Significant layout changes
+               - Important content modifications
+               - Functional behavior changes
+               - UX flow changes
+
+            3. Minor Changes:
+               - Small visual differences
+               - Minor content updates
+               - Style adjustments
+               - Non-critical behavior changes
+
+            Format the summary as:
+            ### 🚨 Critical Issues
+            - [List issues with specific locations and details]
+
+            ### ⚠️ Major Changes
+            - [List changes with specific locations and details]
+
+            ### ℹ️ Minor Changes
+            - [List changes with specific locations and details]
+
+            ### 📋 Overall Impact Assessment
+            [2-3 sentences describing the overall impact of changes]""",
+            mcp_servers=[mcp_server]
+        )
+
+        summary_prompt = f"""Based on the section analysis and detailed comparison, generate a summary of all changes:
+
+        Section Analysis:
+        {sections_analysis}
+
+        Detailed Comparison:
+        {detailed_comparison}"""
+
+        summary_result = await Runner.run(summary_agent, summary_prompt)
+        final_summary = summary_result.final_output
+
+        logger.info(f"\n{'='*50}\n📝 Final Summary:\n{final_summary}\n{'='*50}")
+
+        return final_summary
+
+    except Exception as e:
+        logger.error(f"Error during side-by-side analysis: {e}")
+        raise
+
 async def main():
     parser = argparse.ArgumentParser(description='Compare two URLs for visual differences')
     parser.add_argument('--base-url', required=True, help='Base URL to compare against')
     parser.add_argument('--pr-url', required=True, help='PR URL to compare')
     args = parser.parse_args()
 
+    logger.info(f"\n{'='*50}\nStarting URL comparison\nBase URL: {args.base_url}\nPreview URL: {args.pr_url}\n{'='*50}")
+
     # Ensure the images directory exists in the workspace
     images_dir = os.path.join(GITHUB_WORKSPACE, "images")
     os.makedirs(images_dir, exist_ok=True)
-    logger.info(f"Images directory created at {images_dir}")
 
     # Define screenshot paths with absolute paths
     base_screenshot = os.path.join(images_dir, "base_screenshot.png")
     pr_screenshot = os.path.join(images_dir, "pr_screenshot.png")
     diff_output_path = os.path.join(images_dir, "diff.png")
-
-    logger.info(f"Base screenshot path: {base_screenshot}")
-    logger.info(f"PR screenshot path: {pr_screenshot}")
-    logger.info(f"Diff output path: {diff_output_path}")
 
     # Take screenshots with Playwright directly
     base_success = take_screenshot_with_playwright(args.base_url, base_screenshot)
@@ -210,48 +378,15 @@ async def main():
 
     async with managed_mcp_server() as mcp_server:
         try:
-            agent = Agent(
-                name="URL Comparator",
-                instructions="""Compare two webpages and report any significant differences.
-                1. First visit the base URL and analyze its content
-                2. Then visit the PR URL and compare it with the base URL
-                3. Check the page in its entirety, from head to footer.
-                4. Scroll all the way to the bottom slowly, pausing at intervals to analyze the content.
-                5. Interact with any collapsible sections, tabs, or interactive elements to ensure hidden content is also compared.
-                6. Check responsive behavior by adjusting the viewport size if possible.
-                7. Report any significant differences in layout, content, or functionality.""",
-                mcp_servers=[mcp_server]
-            )
+            # Perform side-by-side analysis
+            comparison_summary = await analyze_sections_side_by_side(mcp_server, args.base_url, args.pr_url)
 
-            prompt = f"""Please compare these two URLs and report any significant differences:
-            Base URL: {args.base_url}
-            PR URL: {args.pr_url}
-
-            Focus on:
-            - Visual layout changes
-            - Content differences
-            - Functional changes
-            - Any broken elements or errors
-            - Missing elements
-            - Hidden content in tabs, dropdowns, or other interactive elements
-            - Responsive behavior if possible
-            - Check the page from head to footer, scrolling slowly to analyze everything
-
-            Make sure to:
-            - Scroll through the entire page slowly
-            - Click on any expandable sections
-            - Test basic interactive elements
-            - Look for differences in both visible and initially hidden content
-
-            Provide a detailed comparison report."""
-
-            logger.info("🧠 Starting comparison between URLs")
-            logger.info("Base URL: %s", args.base_url)
-            logger.info("PR URL: %s", args.pr_url)
-
-            comparison_summary = await run_comparison(mcp_server, agent, prompt)
-            if comparison_summary:
-                post_pr_comment(f"### 🔍 PR Comparison Summary\n\n{comparison_summary}")
+            # Try to post to GitHub if possible, otherwise just log
+            if os.getenv("GITHUB_TOKEN"):
+                post_pr_comment(comparison_summary)
+            else:
+                logger.info("GitHub environment variables not found. Skipping PR comment.")
+                logger.info("Complete analysis has been logged above.")
 
         except RateLimitError as e:
             logger.error("🚫 Rate limit or quota hit: %s", e)
