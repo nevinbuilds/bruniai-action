@@ -15,6 +15,7 @@ import requests
 from PIL import Image, ImageChops
 import numpy as np
 import subprocess
+import base64
 
 # ----------------- Setup -------------------
 load_dotenv()
@@ -174,6 +175,74 @@ async def run_comparison(mcp_server, agent, prompt):
     except Exception as e:
         logger.error("Error during comparison: %s", e)
         raise
+
+async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, diff_image: str):
+    """Analyze screenshots using GPT-4 Vision API to identify visual differences."""
+    logger.info(f"\n{'='*50}\n🔍 Starting image-based analysis\n{'='*50}")
+
+    try:
+        # Encode images to base64
+        def encode_image(image_path):
+            with open(image_path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode('utf-8')
+
+        base64_base = encode_image(base_screenshot)
+        base64_pr = encode_image(pr_screenshot)
+        base64_diff = encode_image(diff_image)
+
+        # Create OpenAI client
+        client = openai.OpenAI()
+
+        # Prepare the messages for GPT-4 Vision
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "I will show you three images: a base screenshot, a PR (preview) screenshot, and a diff image highlighting the differences in red. Please analyze these images and provide a detailed visual comparison focusing on:\n\n1. Layout differences\n2. Visual elements (colors, fonts, spacing)\n3. Content differences\n4. Overall visual impact\n\nHere's the base screenshot:"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{base64_base}"
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": "Here's the PR screenshot:"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{base64_pr}"
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": "And here's the diff image (red highlights show differences):"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{base64_diff}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=1000
+        )
+
+        analysis = response.choices[0].message.content
+        logger.info(f"\n{'='*50}\n🎨 Visual Analysis Results:\n{analysis}\n{'='*50}")
+        return analysis
+
+    except Exception as e:
+        logger.error(f"Error during image analysis: {e}")
+        return f"Error performing image analysis: {str(e)}"
 
 async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
     """Analyze both URLs simultaneously, comparing sections side by side."""
@@ -372,6 +441,9 @@ async def main():
         logger.info("🖼️ Screenshots captured, generating diff image...")
         generate_diff_image(base_screenshot, pr_screenshot, diff_output_path)
         logger.info(f"🔍 Diff image saved at: {diff_output_path}")
+
+        # Perform image-based analysis
+        visual_analysis = await analyze_images_with_vision(base_screenshot, pr_screenshot, diff_output_path)
     else:
         logger.error("Failed to capture one or both screenshots")
         return
@@ -381,9 +453,18 @@ async def main():
             # Perform side-by-side analysis
             comparison_summary = await analyze_sections_side_by_side(mcp_server, args.base_url, args.pr_url)
 
+            # Combine both analyses
+            final_summary = f"""# URL Comparison Analysis
+
+## Visual Analysis (GPT-4 Vision)
+{visual_analysis}
+
+## Accessibility Tree Analysis (MCP)
+{comparison_summary}"""
+
             # Try to post to GitHub if possible, otherwise just log
             if os.getenv("GITHUB_TOKEN"):
-                post_pr_comment(comparison_summary)
+                post_pr_comment(final_summary)
             else:
                 logger.info("GitHub environment variables not found. Skipping PR comment.")
                 logger.info("Complete analysis has been logged above.")
