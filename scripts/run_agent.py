@@ -197,8 +197,8 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
             with open(image_path, "rb") as image_file:
                 return base64.b64encode(image_file.read()).decode('utf-8')
 
-        base64_base = encode_image(base_screenshot)
-        base64_pr = encode_image(pr_screenshot)
+        base64_base = encode_image(base_screenshot.replace('.png', '-resized.png'))
+        base64_pr = encode_image(pr_screenshot.replace('.png', '-resized.png'))
         base64_diff = encode_image(diff_image)
 
         # Create OpenAI client
@@ -209,23 +209,54 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
             {
                 "role": "system",
                 "content": """
-                    You are a system to help identify changes in websites for visual testing purposes. In order to avoid false positives generated when people are only adding a menu item or changing a headline, you need to
-                    determine if the changes are significant or not. To assist in this you are always provided with 3 images :
-                    1. The original image (baseline)
-                    2. The new image (with changes applied from a pull request)
-                    3. A mathematical diff of the first 2 images generated with pixelmatch
-                    Make sure to detect if the changes represent only changes in content
-                    Following some examples that should be considered "non-significant" changes and therefore should be ignored and not considered a problem:
-                    - Changes in text
-                    - Changes in menus
-                    - Headline changes
-                    - Product name
-                    - Product descriptions
-                    - Product price changes
-                    All of these should be interpreted as non-significant changes and do not affect the results of the test.
-                    Make sure to use the sections analysis to guide your analysis. The first thing to check is if all sections are present in the pr screenshot.
-                    If a section is missing in the pr screenshot that would immediately be considered a problem. Also other missing elements
-                    that are either new or missing in the pr screenshot should be considered a problem.
+                    You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
+
+                    CRITICAL CHECKS (Must be performed first):
+                    1. MISSING SECTIONS CHECK: Compare the base image with the PR image and the diff image and immediately identify if any sections are completely missing
+                       - A missing section is a CRITICAL issue and should be reported prominently
+                       - This check must be performed before any other analysis
+                       - If a section exists in the base image and section analysis but not in the PR image, this is a critical failure
+                       - Use the sections analysis to guide your decisions, the analysis will be delimited by <<<>>>.
+                       - If the section animates or moves make sure to point it out and take in consideration to not flag as visual regression on things that are animating.
+
+                    2. STRUCTURAL CHANGES CHECK:
+                       - Identify if sections have moved positions
+                       - Check if the overall layout structure has changed
+                       - Verify if major UI components have been relocated
+                       - These are considered significant issues
+                       - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
+
+                    3. VISUAL HIERARCHY CHECK:
+                       - Verify if the visual hierarchy of elements remains consistent
+                       - Check if important UI elements maintain their relative positioning
+                       - Ensure navigation elements remain accessible
+                       - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
+
+                    NON-CRITICAL CHANGES (Should be noted but not flagged as issues):
+                    - Text content changes
+                    - Menu item text updates
+                    - Headline modifications
+                    - Product information updates
+                    - Price changes
+                    - Minor styling changes that don't affect layout
+
+                    FORMAT YOUR RESPONSE AS FOLLOWS:
+                    1. CRITICAL ISSUES (if any):
+                       - List any missing sections
+                       - List any major structural changes
+                       - List any broken layouts
+
+                    2. STRUCTURAL ANALYSIS:
+                       - Compare each section's presence and position
+                       - Note any layout modifications
+
+                    3. VISUAL CHANGES:
+                       - Document non-critical changes
+                       - Note any styling updates
+
+                    4. CONCLUSION:
+                       - Clearly state if there are any critical issues
+                       - Provide a pass/fail recommendation
                 """
             }
         ]
@@ -233,7 +264,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
         if sections_analysis:
             messages.append({
                 "role": "user",
-                "content": f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis:\n\n{sections_analysis}"
+                "content": f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis<<<:\n\n{sections_analysis}>>>"
             })
 
         messages.append({
@@ -241,7 +272,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
             "content": [
                 {
                     "type": "text",
-                    "text": "Please analyze these three images, using the provided section information as a guide. Focus on:\n\n1. Layout differences within each identified section\n2. Visual elements (colors, fonts, spacing) changes per section\n3. Content differences that might indicate structural changes\n4. Overall visual impact and whether changes are significant\n\nHere's the base screenshot:"
+                    "text": "Here are the images to analyze in the right order. Base Image, PR Image and Diff Image."
                 },
                 {
                     "type": "image_url",
@@ -250,18 +281,10 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     }
                 },
                 {
-                    "type": "text",
-                    "text": "Here's the PR screenshot:"
-                },
-                {
                     "type": "image_url",
                     "image_url": {
                         "url": f"data:image/png;base64,{base64_pr}"
                     }
-                },
-                {
-                    "type": "text",
-                    "text": "And here's the diff image (red highlights show differences):"
                 },
                 {
                     "type": "image_url",
@@ -303,7 +326,7 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
             2. Note their position and structure
             3. Describe the purpose of each section
             4. Note any important visual elements or patterns
-
+            5. Note if the section animates or moves. This is important as it should probably be ignored.
             Format the response as:
             ### Base URL Structure:
             [Overall layout description]
@@ -314,6 +337,7 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                - Purpose: [description]
                - Key Elements: [list]
                - Visual Patterns: [description]
+               - Animation : [description]
 
             2. [Section Name]
                ...
