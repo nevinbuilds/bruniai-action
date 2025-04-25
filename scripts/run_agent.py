@@ -212,6 +212,9 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     - Product descriptions
                     - Product price changes
                     All of these should be interpreted as non-significant changes and do not affect the results of the test.
+                    Make sure to use the sections analysis to guide your analysis. The first thing to check is if all sections are present in the pr screenshot.
+                    If a section is missing in the pr screenshot that would immediately be considered a problem. Also other missing elements
+                    that are either new or missing in the pr screenshot should be considered a problem.
                 """
             }
         ]
