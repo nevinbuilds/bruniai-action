@@ -176,7 +176,7 @@ async def run_comparison(mcp_server, agent, prompt):
         logger.error("Error during comparison: %s", e)
         raise
 
-async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, diff_image: str):
+async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, diff_image: str, sections_analysis: str = None):
     """Analyze screenshots using GPT-4 Vision API to identify visual differences."""
     logger.info(f"\n{'='*50}\n🔍 Starting image-based analysis\n{'='*50}")
 
@@ -194,45 +194,73 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
         client = openai.OpenAI()
 
         # Prepare the messages for GPT-4 Vision
+        messages = [
+            {
+                "role": "system",
+                "content": """
+                    You are a system to help identify changes in websites for visual testing purposes. In order to avoid false positives generated when people are only adding a menu item or changing a headline, you need to
+                    determine if the changes are significant or not. To assist in this you are always provided with 3 images :
+                    1. The original image (baseline)
+                    2. The new image (with changes applied from a pull request)
+                    3. A mathematical diff of the first 2 images generated with pixelmatch
+                    Make sure to detect if the changes represent only changes in content
+                    Following some examples that should be considered "non-significant" changes and therefore should be ignored and not considered a problem:
+                    - Changes in text
+                    - Changes in menus
+                    - Headline changes
+                    - Product name
+                    - Product descriptions
+                    - Product price changes
+                    All of these should be interpreted as non-significant changes and do not affect the results of the test.
+                """
+            }
+        ]
+
+        if sections_analysis:
+            messages.append({
+                "role": "user",
+                "content": f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis:\n\n{sections_analysis}"
+            })
+
+        messages.append({
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Please analyze these three images, using the provided section information as a guide. Focus on:\n\n1. Layout differences within each identified section\n2. Visual elements (colors, fonts, spacing) changes per section\n3. Content differences that might indicate structural changes\n4. Overall visual impact and whether changes are significant\n\nHere's the base screenshot:"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{base64_base}"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "Here's the PR screenshot:"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{base64_pr}"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "And here's the diff image (red highlights show differences):"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{base64_diff}"
+                    }
+                }
+            ]
+        })
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "I will show you three images: a base screenshot, a PR (preview) screenshot, and a diff image highlighting the differences in red. Please analyze these images and provide a detailed visual comparison focusing on:\n\n1. Layout differences\n2. Visual elements (colors, fonts, spacing)\n3. Content differences\n4. Overall visual impact\n\nHere's the base screenshot:"
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{base64_base}"
-                            }
-                        },
-                        {
-                            "type": "text",
-                            "text": "Here's the PR screenshot:"
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{base64_pr}"
-                            }
-                        },
-                        {
-                            "type": "text",
-                            "text": "And here's the diff image (red highlights show differences):"
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{base64_diff}"
-                            }
-                        }
-                    ]
-                }
-            ],
+            messages=messages,
             max_tokens=1000
         )
 
@@ -245,174 +273,54 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
         return f"Error performing image analysis: {str(e)}"
 
 async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
-    """Analyze both URLs simultaneously, comparing sections side by side."""
+    """Analyze the base URL to identify its sections structure."""
     try:
-        logger.info(f"\n{'='*50}\n🔍 Starting side-by-side analysis\n{'='*50}")
+        logger.info(f"\n{'='*50}\n🔍 Starting base URL section analysis\n{'='*50}")
 
-        # First identify sections in both URLs
+        # Identify sections in the base URL
         section_agent = Agent(
             name="Section Analyzer",
-            instructions="""Open both URLs in separate tabs and identify all major sections.
-            Compare the sections between both URLs directly.
+            instructions="""Analyze the base URL and identify all major sections.
+            This will serve as our reference structure for visual comparison.
 
-            For each URL:
+            For the base URL:
             1. List all major sections found
             2. Note their position and structure
-            3. Compare corresponding sections between URLs
-            4. Note any missing or additional sections
+            3. Describe the purpose of each section
+            4. Note any important visual elements or patterns
 
             Format the response as:
-            ### Base URL Sections:
-            [List of sections with positions]
+            ### Base URL Structure:
+            [Overall layout description]
 
-            ### Preview URL Sections:
-            [List of sections with positions]
+            ### Sections (in order of appearance):
+            1. [Section Name]
+               - Position: [description]
+               - Purpose: [description]
+               - Key Elements: [list]
+               - Visual Patterns: [description]
 
-            ### Section Differences:
-            - Missing sections in preview: [list]
-            - New sections in preview: [list]
-            - Sections with different positions: [list]""",
+            2. [Section Name]
+               ...
+
+            This structural information will be used as a reference to analyze visual changes in the preview URL.""",
             mcp_servers=[mcp_server]
         )
 
-        section_prompt = f"""Please analyze these two URLs side by side:
+        section_prompt = f"""Please analyze this base URL to establish our reference structure:
         Base URL: {base_url}
-        Preview URL: {preview_url}
 
-        Open both in separate tabs and identify all sections."""
+        Focus on identifying all major sections and their characteristics.
+        This will serve as our baseline for comparing visual changes."""
 
         section_result = await Runner.run(section_agent, section_prompt)
         sections_analysis = section_result.final_output
-        logger.info(f"\n{'='*50}\n🗺️ Section Analysis:\n{sections_analysis}\n{'='*50}")
+        logger.info(f"\n{'='*50}\n🗺️ Base URL Section Analysis:\n{sections_analysis}\n{'='*50}")
 
-        # Now do detailed comparison of each section
-        comparison_agent = Agent(
-            name="Section Comparator",
-            instructions="""Compare each section between the two URLs side by side.
-            For each section that exists in either URL:
-
-            1. Visual Comparison:
-               - Layout differences (position, size, alignment)
-               - Styling differences (colors, fonts, spacing)
-               - Responsive behavior differences
-               - Visual hierarchy changes
-
-            2. Content Comparison:
-               - Text differences
-               - Image/media differences
-               - Missing or additional elements
-               - Content structure changes
-
-            3. Functionality Comparison:
-               - Interactive element differences
-               - Behavior changes
-               - Form/input differences
-               - Navigation changes
-               - Dynamic content differences
-
-            4. UX & Accessibility Comparison:
-               - Focus behavior differences
-               - Keyboard navigation changes
-               - Error handling differences
-               - Loading state differences
-               - User feedback differences
-
-            For each section, format the comparison as:
-            ### [Section Name] Comparison:
-
-            #### Present In:
-            - Base URL: Yes/No
-            - Preview URL: Yes/No
-
-            #### Visual Changes:
-            - [List specific differences]
-
-            #### Content Changes:
-            - [List specific differences]
-
-            #### Functional Changes:
-            - [List specific differences]
-
-            #### UX Changes:
-            - [List specific differences]
-
-            If a section is missing in either URL, clearly note that and explain the impact.""",
-            mcp_servers=[mcp_server]
-        )
-
-        comparison_prompt = f"""With both URLs open in separate tabs:
-        Base URL: {base_url}
-        Preview URL: {preview_url}
-
-        Compare each section side by side following the format in your instructions.
-        Pay special attention to:
-        1. Sections that exist in one URL but not the other
-        2. Sections that have moved positions
-        3. Sections with significant content or functional changes
-
-        {sections_analysis}"""
-
-        comparison_result = await Runner.run(comparison_agent, comparison_prompt)
-        detailed_comparison = comparison_result.final_output
-
-        logger.info(f"\n{'='*50}\n📊 Detailed Section Comparison:\n{detailed_comparison}\n{'='*50}")
-
-        # Generate final summary
-        summary_agent = Agent(
-            name="Summary Generator",
-            instructions="""Generate a clear, actionable summary of all differences found.
-            Categorize changes by severity:
-
-            1. Critical Issues:
-               - Missing essential sections
-               - Broken core functionality
-               - Major content losses
-               - Severe layout breaks
-
-            2. Major Changes:
-               - Significant layout changes
-               - Important content modifications
-               - Functional behavior changes
-               - UX flow changes
-
-            3. Minor Changes:
-               - Small visual differences
-               - Minor content updates
-               - Style adjustments
-               - Non-critical behavior changes
-
-            Format the summary as:
-            ### 🚨 Critical Issues
-            - [List issues with specific locations and details]
-
-            ### ⚠️ Major Changes
-            - [List changes with specific locations and details]
-
-            ### ℹ️ Minor Changes
-            - [List changes with specific locations and details]
-
-            ### 📋 Overall Impact Assessment
-            [2-3 sentences describing the overall impact of changes]""",
-            mcp_servers=[mcp_server]
-        )
-
-        summary_prompt = f"""Based on the section analysis and detailed comparison, generate a summary of all changes:
-
-        Section Analysis:
-        {sections_analysis}
-
-        Detailed Comparison:
-        {detailed_comparison}"""
-
-        summary_result = await Runner.run(summary_agent, summary_prompt)
-        final_summary = summary_result.final_output
-
-        logger.info(f"\n{'='*50}\n📝 Final Summary:\n{final_summary}\n{'='*50}")
-
-        return final_summary
+        return sections_analysis
 
     except Exception as e:
-        logger.error(f"Error during side-by-side analysis: {e}")
+        logger.error(f"Error during section analysis: {e}")
         raise
 
 async def main():
@@ -436,31 +344,30 @@ async def main():
     base_success = take_screenshot_with_playwright(args.base_url, base_screenshot)
     pr_success = take_screenshot_with_playwright(args.pr_url, pr_screenshot)
 
-    # Generate diff if screenshots were successful
-    if base_success and pr_success:
-        logger.info("🖼️ Screenshots captured, generating diff image...")
-        generate_diff_image(base_screenshot, pr_screenshot, diff_output_path)
-        logger.info(f"🔍 Diff image saved at: {diff_output_path}")
-
-        # Perform image-based analysis
-        visual_analysis = await analyze_images_with_vision(base_screenshot, pr_screenshot, diff_output_path)
-    else:
+    if not (base_success and pr_success):
         logger.error("Failed to capture one or both screenshots")
         return
 
+    logger.info("🖼️ Screenshots captured, generating diff image...")
+    generate_diff_image(base_screenshot, pr_screenshot, diff_output_path)
+    logger.info(f"🔍 Diff image saved at: {diff_output_path}")
+
     async with managed_mcp_server() as mcp_server:
         try:
-            # Perform side-by-side analysis
-            comparison_summary = await analyze_sections_side_by_side(mcp_server, args.base_url, args.pr_url)
+            # First get the sections analysis
+            sections_analysis = await analyze_sections_side_by_side(mcp_server, args.base_url, args.pr_url)
+
+            # Then perform visual analysis with the sections information
+            visual_analysis = await analyze_images_with_vision(base_screenshot, pr_screenshot, diff_output_path, sections_analysis)
 
             # Combine both analyses
             final_summary = f"""# URL Comparison Analysis
 
-## Visual Analysis (GPT-4 Vision)
-{visual_analysis}
+            ## Structural Analysis
+            {sections_analysis}
 
-## Accessibility Tree Analysis (MCP)
-{comparison_summary}"""
+            ## Visual Analysis
+            {visual_analysis}"""
 
             # Try to post to GitHub if possible, otherwise just log
             if os.getenv("GITHUB_TOKEN"):
