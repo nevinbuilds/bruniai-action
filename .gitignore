@@ -13,3 +13,5 @@ images/
 venv310/
 
 .env
+
+.DS_Store
