@@ -259,9 +259,10 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
         })
 
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1",
             messages=messages,
-            max_tokens=1000
+            max_tokens=1000,
+            temperature=0.2  # Lower temperature for more consistent analysis
         )
 
         analysis = response.choices[0].message.content
