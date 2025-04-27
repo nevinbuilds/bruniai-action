@@ -239,6 +239,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     - Product information updates
                     - Price changes
                     - Minor styling changes that don't affect layout
+                    - If the section animates or moves
 
                     FORMAT YOUR RESPONSE AS FOLLOWS:
                     1. CRITICAL ISSUES (if any):
@@ -253,6 +254,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     3. VISUAL CHANGES:
                        - Document non-critical changes
                        - Note any styling updates
+                       - If a section is animating or moving, report that it is animating or moving as that can be the cause of a diff in a section.
 
                     4. CONCLUSION:
                        - Clearly state if there are any critical issues
@@ -265,7 +267,10 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
         if sections_analysis:
             messages.append({
                 "role": "user",
-                "content": f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis<<<:\n\n{sections_analysis}>>>"
+                "content": (
+                    f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis<<<:\n\n{sections_analysis}>>>.\n\n"
+                    "Focus the image diff analysis on the sections that are not animating."
+                )
             })
 
         messages.append({
