@@ -256,6 +256,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
 
                     4. CONCLUSION:
                        - Clearly state if there are any critical issues
+                       - Even if there are not critical issues, always describe where any visual changes are and why they are not critical.
                        - Provide a pass/fail recommendation
                 """
             }
