@@ -16,6 +16,7 @@ from PIL import Image, ImageChops
 import numpy as np
 import subprocess
 import base64
+from playwright.async_api import async_playwright
 
 # ----------------- Setup -------------------
 load_dotenv()
@@ -93,8 +94,8 @@ def take_screenshot_with_playwright(url, output_path):
 
 def get_pr_number_from_event():
     event_path = os.getenv("GITHUB_EVENT_PATH")
-    if not event_path or not os.path.exists(event_path):
-        logger.warning("GITHUB_EVENT_PATH not found.")
+    if not event_path or not os.getenv("GITHUB_REPOSITORY"):
+        logger.warning("GITHUB_EVENT_PATH not found or GITHUB_REPOSITORY not set.")
         return None
 
     try:
@@ -212,10 +213,12 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
 
                     CRITICAL CHECKS (Must be performed first):
-                    1. MISSING SECTIONS CHECK: Compare the base image with the PR image and the diff image and immediately identify if any sections are completely missing
-                       - A missing section is a CRITICAL issue and should be reported prominently
-                       - This check must be performed before any other analysis
-                       - If a section exists in the base image and section analysis but not in the PR image, this is a critical failure
+                    1. MISSING SECTIONS CHECK:
+                       - For each section described in the section analysis, **explicitly check if that section is visually present in the PR image**.
+                       - **Iterate through the list of sections one by one. For each, state whether it is present or missing in the PR image.**
+                       - A missing section is a CRITICAL issue and should be reported prominently.
+                       - This check must be performed before any other analysis.
+                       - If a section exists in the base image and section analysis but not in the PR image, this is a critical failure.
                        - Use the sections analysis to guide your decisions, the analysis will be delimited by <<<>>>.
                        - If the section animates or moves make sure to point it out and take in consideration to not flag as visual regression on things that are animating.
 
@@ -243,7 +246,9 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
 
                     FORMAT YOUR RESPONSE AS FOLLOWS:
                     1. CRITICAL ISSUES (if any):
-                       - List any missing sections
+                       - **For each section in the analysis, state:**
+                         - Section Name: [Present/Missing]
+                         - If missing, describe its expected location and content.
                        - List any major structural changes
                        - List any broken layouts
 
@@ -269,6 +274,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                 "role": "user",
                 "content": (
                     f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis<<<:\n\n{sections_analysis}>>>.\n\n"
+                    "**For each section listed above, explicitly check if it is present in the PR screenshot. If any section is missing, list it by name and describe its expected location and content.**"
                     "Focus the image diff analysis on the sections that are not animating."
                 )
             })
@@ -368,6 +374,37 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
         logger.error(f"Error during section analysis: {e}")
         raise
 
+async def extract_section_bounding_boxes(url, selector="section,header,footer,main,nav,aside"):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        await page.goto(url, wait_until="networkidle")
+
+        # Evaluate JS in the page to get bounding boxes
+        sections = await page.eval_on_selector_all(
+            selector,
+            """(nodes) => nodes.map((node, idx) => {
+                const rect = node.getBoundingClientRect();
+                let label = node.getAttribute('aria-label') ||
+                            node.getAttribute('id') ||
+                            node.getAttribute('class') ||
+                            node.tagName + '-' + idx;
+                return {
+                    label,
+                    tag: node.tagName,
+                    boundingBox: {
+                        x: Math.round(rect.x),
+                        y: Math.round(rect.y),
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height)
+                    }
+                };
+            })"""
+        )
+
+        await browser.close()
+        return sections
+
 async def main():
     parser = argparse.ArgumentParser(description='Compare two URLs for visual differences')
     parser.add_argument('--base-url', required=True, help='Base URL to compare against')
@@ -393,6 +430,14 @@ async def main():
         logger.error("Failed to capture one or both screenshots")
         return
 
+    # NEW: Extract section bounding boxes from the base URL
+    sections = await extract_section_bounding_boxes(args.base_url)
+    logger.info(f"Extracted {len(sections)} sections from base URL")
+    # Optionally, save to a file for inspection
+    with open(os.path.join(images_dir, "sections.json"), "w") as f:
+        json.dump(sections, f, indent=2)
+
+    # Continue with diff generation, etc.
     logger.info("🖼️ Screenshots captured, generating diff image...")
     generate_diff_image(base_screenshot, pr_screenshot, diff_output_path)
     logger.info(f"🔍 Diff image saved at: {diff_output_path}")
