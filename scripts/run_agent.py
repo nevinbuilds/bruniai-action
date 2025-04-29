@@ -451,13 +451,13 @@ async def main():
             visual_analysis = await analyze_images_with_vision(base_screenshot, pr_screenshot, diff_output_path, sections_analysis)
 
             # Combine both analyses
-            final_summary = f"""# URL Comparison Analysis
-
-            ## Structural Analysis
-            {sections_analysis}
-
-            ## Visual Analysis
-            {visual_analysis}"""
+            final_summary = (
+                "# URL Comparison Analysis\n\n"
+                "## Structural Analysis\n"
+                f"{sections_analysis}\n\n"
+                "## Visual Analysis\n"
+                f"{visual_analysis}"
+            )
 
             # Try to post to GitHub if possible, otherwise just log
             if os.getenv("GITHUB_TOKEN"):
