@@ -44,15 +44,20 @@ runs:
     - name: Install Playwright
       working-directory: ${{ github.action_path }}
       run: |
+        npm install -g @playwright/mcp@latest playwright@latest
         npx playwright install --with-deps chromium
         npx playwright install-deps chromium
       shell: bash
 
-    - name: Start MCP Server
+    - name: Start MCP Server with Debug Mode
       working-directory: ${{ github.action_path }}
       run: |
-        npx @playwright/mcp@0.0.13 --port 8931 &
-        sleep 10  # Increased server startup time to 10 seconds
+        echo "Starting MCP Server..."
+        DEBUG=pw:mcp* npx @playwright/mcp@latest --port 8931 &
+        echo "Waiting for MCP server to start..."
+        sleep 15  # Give the server more time to start and initialize
+        echo "Checking if MCP server is running..."
+        curl -s http://localhost:8931/health || echo "MCP server not responding to health check"
       shell: bash
 
     - name: Run URL comparison

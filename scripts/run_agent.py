@@ -195,10 +195,21 @@ Runner.run = rate_limit()(Runner.run)
 async def managed_mcp_server():
     mcp_server = None
     try:
+        # Check if MCP server is running before attempting to connect
+        try:
+            logger.info("Checking MCP server health...")
+            # Use a simple HTTP request to check server availability
+            response = requests.get("http://localhost:8931/health", timeout=5)
+            logger.info(f"MCP server health check: {response.status_code}")
+        except Exception as e:
+            logger.warning(f"MCP server health check failed: {e}")
+            logger.warning("This may indicate that the MCP server is not running properly.")
+            logger.warning("Starting the connection attempt anyway...")
+
         # Increase timeout for MCP server connection
         mcp_server = MCPServerSse(params=MCPServerSseParams(
             url="http://localhost:8931/sse",
-            request_timeout=60  # Increased from 30 seconds to 60 seconds
+            request_timeout=120  # Increased to 120 seconds
         ))
 
         # Try to connect with retries
@@ -209,6 +220,16 @@ async def managed_mcp_server():
                 logger.info(f"Connecting to MCP server (attempt {attempt}/{max_retries})...")
                 await mcp_server.connect()
                 logger.info("🔌 Connected to MCP server")
+
+                # Test the connection with a simple tool call
+                try:
+                    logger.info("Testing MCP connection with a simple tool call...")
+                    await mcp_server.execute({"method": "tools/list", "params": {}})
+                    logger.info("✅ MCP connection working properly")
+                except Exception as test_error:
+                    logger.warning(f"MCP connection test failed: {test_error}")
+                    logger.warning("Proceeding anyway, but tool calls might fail")
+
                 break
             except Exception as e:
                 if attempt < max_retries:
@@ -216,7 +237,8 @@ async def managed_mcp_server():
                     logger.info(f"Retrying in {retry_delay} seconds...")
                     await asyncio.sleep(retry_delay)
                 else:
-                    raise
+                    logger.error("All connection attempts to MCP server failed")
+                    raise RuntimeError(f"Could not connect to MCP server after {max_retries} attempts: {e}")
 
         yield mcp_server
     finally:
@@ -377,6 +399,9 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
     """Analyze the base URL to identify its sections structure."""
     try:
         logger.info(f"\n{'='*50}\n🔍 Starting base URL section analysis\n{'='*50}")
+
+        # Set up toolcall timeout
+        mcp_server.params.request_timeout = 120  # Set tool call timeout to 120 seconds
 
         # Identify sections in the base URL
         section_agent = Agent(
