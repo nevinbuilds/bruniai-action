@@ -195,11 +195,15 @@ Runner.run = rate_limit()(Runner.run)
 async def managed_mcp_server():
     mcp_server = None
     try:
-        # Increase timeout for MCP server connection
-        mcp_server = MCPServerSse(params=MCPServerSseParams(
+        # Create MCP server instance with increased timeout
+        params = MCPServerSseParams(
             url="http://localhost:8931/sse",
             request_timeout=120  # Increased from default 5 seconds to 120 seconds
-        ))
+        )
+        mcp_server = MCPServerSse(params=params)
+
+        # Log the params for debugging
+        logger.info(f"MCP server parameters: {vars(params) if hasattr(params, '__dict__') else params}")
 
         # Try to connect with retries
         max_retries = 5
@@ -379,8 +383,16 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
     try:
         logger.info(f"\n{'='*50}\n🔍 Starting base URL section analysis\n{'='*50}")
 
-        # Set up toolcall timeout
-        mcp_server.params.request_timeout = 120  # Set tool call timeout to 120 seconds
+        # Update the mcp_server timeout if possible
+        try:
+            if hasattr(mcp_server, 'params'):
+                if isinstance(mcp_server.params, dict):
+                    mcp_server.params['request_timeout'] = 120
+                elif hasattr(mcp_server.params, 'request_timeout'):
+                    mcp_server.params.request_timeout = 120
+            logger.info("Updated MCP server timeout to 120 seconds")
+        except Exception as e:
+            logger.warning(f"Could not update MCP server timeout: {e}")
 
         # Identify sections in the base URL
         section_agent = Agent(
