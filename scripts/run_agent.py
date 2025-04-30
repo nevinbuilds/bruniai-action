@@ -77,6 +77,7 @@ def take_screenshot_with_playwright(url, output_path):
         logger.info(f"Taking screenshot of {url} with Playwright...")
         result = subprocess.run([
             "npx", "playwright", "screenshot",
+            "--browser", "chromium",
             "--device", "Desktop Chrome",
             "--full-page",
             url, output_path
@@ -85,6 +86,8 @@ def take_screenshot_with_playwright(url, output_path):
         return True
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to take screenshot: {e.stderr}")
+        # Print detailed output to help with debugging
+        logger.error(f"Command output: {e.stdout}")
         return False
     except Exception as e:
         logger.error(f"Unexpected error taking screenshot: {e}")
@@ -403,35 +406,39 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
         raise
 
 async def extract_section_bounding_boxes(url, selector="section,header,footer,main,nav,aside"):
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
-        await page.goto(url, wait_until="networkidle")
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await page.goto(url, wait_until="networkidle", timeout=60000)
 
-        # Evaluate JS in the page to get bounding boxes
-        sections = await page.eval_on_selector_all(
-            selector,
-            """(nodes) => nodes.map((node, idx) => {
-                const rect = node.getBoundingClientRect();
-                let label = node.getAttribute('aria-label') ||
-                            node.getAttribute('id') ||
-                            node.getAttribute('class') ||
-                            node.tagName + '-' + idx;
-                return {
-                    label,
-                    tag: node.tagName,
-                    boundingBox: {
-                        x: Math.round(rect.x),
-                        y: Math.round(rect.y),
-                        width: Math.round(rect.width),
-                        height: Math.round(rect.height)
-                    }
-                };
-            })"""
-        )
+            # Evaluate JS in the page to get bounding boxes
+            sections = await page.eval_on_selector_all(
+                selector,
+                """(nodes) => nodes.map((node, idx) => {
+                    const rect = node.getBoundingClientRect();
+                    let label = node.getAttribute('aria-label') ||
+                                node.getAttribute('id') ||
+                                node.getAttribute('class') ||
+                                node.tagName + '-' + idx;
+                    return {
+                        label,
+                        tag: node.tagName,
+                        boundingBox: {
+                            x: Math.round(rect.x),
+                            y: Math.round(rect.y),
+                            width: Math.round(rect.width),
+                            height: Math.round(rect.height)
+                        }
+                    };
+                })"""
+            )
 
-        await browser.close()
-        return sections
+            await browser.close()
+            return sections
+    except Exception as e:
+        logger.error(f"Error extracting section bounding boxes: {e}")
+        return []
 
 async def main():
     parser = argparse.ArgumentParser(description='Compare two URLs for visual differences')

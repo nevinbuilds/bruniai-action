@@ -41,11 +41,11 @@ runs:
         npm install
       shell: bash
 
-    - name: Install Playwright and dependencies
+    - name: Install Playwright
       working-directory: ${{ github.action_path }}
       run: |
-        npx playwright install chromium
-        npx playwright install-deps
+        npx playwright install --with-deps chromium
+        npx playwright install-deps chromium
       shell: bash
 
     - name: Start MCP Server
@@ -68,5 +68,5 @@ runs:
     - name: Stop MCP Server
       working-directory: ${{ github.action_path }}
       run: |
-        pkill -f "@playwright/mcp"
+        pkill -f "@playwright/mcp" || true
       shell: bash
