@@ -195,9 +195,29 @@ Runner.run = rate_limit()(Runner.run)
 async def managed_mcp_server():
     mcp_server = None
     try:
-        mcp_server = MCPServerSse(params=MCPServerSseParams(url="http://localhost:8931/sse"))
-        await mcp_server.connect()
-        logger.info("🔌 Connected to MCP server")
+        # Increase timeout for MCP server connection
+        mcp_server = MCPServerSse(params=MCPServerSseParams(
+            url="http://localhost:8931/sse",
+            request_timeout=30  # Increased from default 5 seconds to 30 seconds
+        ))
+
+        # Try to connect with retries
+        max_retries = 3
+        retry_delay = 5
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info(f"Connecting to MCP server (attempt {attempt}/{max_retries})...")
+                await mcp_server.connect()
+                logger.info("🔌 Connected to MCP server")
+                break
+            except Exception as e:
+                if attempt < max_retries:
+                    logger.warning(f"Failed to connect to MCP server (attempt {attempt}/{max_retries}): {e}")
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise
+
         yield mcp_server
     finally:
         if mcp_server:
