@@ -77,6 +77,7 @@ def take_screenshot_with_playwright(url, output_path):
         logger.info(f"Taking screenshot of {url} with Playwright...")
         result = subprocess.run([
             "npx", "playwright", "screenshot",
+            "--browser", "chromium",
             "--device", "Desktop Chrome",
             "--full-page",
             url, output_path
@@ -85,6 +86,8 @@ def take_screenshot_with_playwright(url, output_path):
         return True
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to take screenshot: {e.stderr}")
+        # Print detailed output to help with debugging
+        logger.error(f"Command output: {e.stdout}")
         return False
     except Exception as e:
         logger.error(f"Unexpected error taking screenshot: {e}")
@@ -127,18 +130,46 @@ def post_pr_comment(summary: str):
         logger.warning("Missing GitHub context, skipping PR comment.")
         return
 
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    # First, try to find an existing comment from our tool
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
-    response = requests.post(url, json={"body": summary}, headers=headers)
+    # Get all comments for the PR
+    comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    response = requests.get(comments_url, headers=headers)
 
-    if response.status_code == 201:
-        logger.info("📝 Successfully posted PR comment.")
+    if response.status_code != 200:
+        logger.error(f"Failed to fetch comments: {response.text}")
+        return
+
+    comments = response.json()
+    existing_comment_id = None
+
+    # Look for a comment that starts with our header
+    for comment in comments:
+        if comment["body"].startswith("# URL Comparison Analysis"):
+            existing_comment_id = comment["id"]
+            break
+
+    if existing_comment_id:
+        # Update existing comment
+        update_url = f"https://api.github.com/repos/{repo}/issues/comments/{existing_comment_id}"
+        response = requests.patch(update_url, json={"body": summary}, headers=headers)
+
+        if response.status_code == 200:
+            logger.info("📝 Successfully updated existing PR comment.")
+        else:
+            logger.error("❌ Failed to update PR comment: %s", response.text)
     else:
-        logger.error("❌ Failed to post PR comment: %s", response.text)
+        # Create new comment
+        response = requests.post(comments_url, json={"body": summary}, headers=headers)
+
+        if response.status_code == 201:
+            logger.info("📝 Successfully created new PR comment.")
+        else:
+            logger.error("❌ Failed to create PR comment: %s", response.text)
 
 # ----------------- Rate Limiting Decorator (Optional) -------------------
 def rate_limit(calls_per_minute=20):
@@ -164,9 +195,29 @@ Runner.run = rate_limit()(Runner.run)
 async def managed_mcp_server():
     mcp_server = None
     try:
-        mcp_server = MCPServerSse(params=MCPServerSseParams(url="http://localhost:8931/sse"))
-        await mcp_server.connect()
-        logger.info("🔌 Connected to MCP server")
+        # Increase timeout for MCP server connection
+        mcp_server = MCPServerSse(params=MCPServerSseParams(
+            url="http://localhost:8931/sse",
+            request_timeout=30  # Increased from default 5 seconds to 30 seconds
+        ))
+
+        # Try to connect with retries
+        max_retries = 3
+        retry_delay = 5
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info(f"Connecting to MCP server (attempt {attempt}/{max_retries})...")
+                await mcp_server.connect()
+                logger.info("🔌 Connected to MCP server")
+                break
+            except Exception as e:
+                if attempt < max_retries:
+                    logger.warning(f"Failed to connect to MCP server (attempt {attempt}/{max_retries}): {e}")
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise
+
         yield mcp_server
     finally:
         if mcp_server:
@@ -375,35 +426,39 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
         raise
 
 async def extract_section_bounding_boxes(url, selector="section,header,footer,main,nav,aside"):
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
-        await page.goto(url, wait_until="networkidle")
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await page.goto(url, wait_until="networkidle", timeout=60000)
 
-        # Evaluate JS in the page to get bounding boxes
-        sections = await page.eval_on_selector_all(
-            selector,
-            """(nodes) => nodes.map((node, idx) => {
-                const rect = node.getBoundingClientRect();
-                let label = node.getAttribute('aria-label') ||
-                            node.getAttribute('id') ||
-                            node.getAttribute('class') ||
-                            node.tagName + '-' + idx;
-                return {
-                    label,
-                    tag: node.tagName,
-                    boundingBox: {
-                        x: Math.round(rect.x),
-                        y: Math.round(rect.y),
-                        width: Math.round(rect.width),
-                        height: Math.round(rect.height)
-                    }
-                };
-            })"""
-        )
+            # Evaluate JS in the page to get bounding boxes
+            sections = await page.eval_on_selector_all(
+                selector,
+                """(nodes) => nodes.map((node, idx) => {
+                    const rect = node.getBoundingClientRect();
+                    let label = node.getAttribute('aria-label') ||
+                                node.getAttribute('id') ||
+                                node.getAttribute('class') ||
+                                node.tagName + '-' + idx;
+                    return {
+                        label,
+                        tag: node.tagName,
+                        boundingBox: {
+                            x: Math.round(rect.x),
+                            y: Math.round(rect.y),
+                            width: Math.round(rect.width),
+                            height: Math.round(rect.height)
+                        }
+                    };
+                })"""
+            )
 
-        await browser.close()
-        return sections
+            await browser.close()
+            return sections
+    except Exception as e:
+        logger.error(f"Error extracting section bounding boxes: {e}")
+        return []
 
 async def main():
     parser = argparse.ArgumentParser(description='Compare two URLs for visual differences')
