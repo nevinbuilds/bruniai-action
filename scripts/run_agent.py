@@ -127,18 +127,46 @@ def post_pr_comment(summary: str):
         logger.warning("Missing GitHub context, skipping PR comment.")
         return
 
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    # First, try to find an existing comment from our tool
     headers = {
         "Authorization": f"token {github_token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
-    response = requests.post(url, json={"body": summary}, headers=headers)
+    # Get all comments for the PR
+    comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    response = requests.get(comments_url, headers=headers)
 
-    if response.status_code == 201:
-        logger.info("📝 Successfully posted PR comment.")
+    if response.status_code != 200:
+        logger.error(f"Failed to fetch comments: {response.text}")
+        return
+
+    comments = response.json()
+    existing_comment_id = None
+
+    # Look for a comment that starts with our header
+    for comment in comments:
+        if comment["body"].startswith("# URL Comparison Analysis"):
+            existing_comment_id = comment["id"]
+            break
+
+    if existing_comment_id:
+        # Update existing comment
+        update_url = f"https://api.github.com/repos/{repo}/issues/comments/{existing_comment_id}"
+        response = requests.patch(update_url, json={"body": summary}, headers=headers)
+
+        if response.status_code == 200:
+            logger.info("📝 Successfully updated existing PR comment.")
+        else:
+            logger.error("❌ Failed to update PR comment: %s", response.text)
     else:
-        logger.error("❌ Failed to post PR comment: %s", response.text)
+        # Create new comment
+        response = requests.post(comments_url, json={"body": summary}, headers=headers)
+
+        if response.status_code == 201:
+            logger.info("📝 Successfully created new PR comment.")
+        else:
+            logger.error("❌ Failed to create PR comment: %s", response.text)
 
 # ----------------- Rate Limiting Decorator (Optional) -------------------
 def rate_limit(calls_per_minute=20):
