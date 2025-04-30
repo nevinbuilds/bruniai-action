@@ -41,11 +41,16 @@ runs:
         npm install
       shell: bash
 
+    - name: Install Playwright and dependencies
+      working-directory: ${{ github.action_path }}
+      run: |
+        npx playwright install chromium
+        npx playwright install-deps
+      shell: bash
+
     - name: Start MCP Server
       working-directory: ${{ github.action_path }}
       run: |
-        npx playwright install
-        npx playwright install-deps
         npx @playwright/mcp@latest --port 8931 &
         sleep 5  # Give the server time to start
       shell: bash
