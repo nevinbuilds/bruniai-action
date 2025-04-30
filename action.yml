@@ -51,8 +51,8 @@ runs:
     - name: Start MCP Server
       working-directory: ${{ github.action_path }}
       run: |
-        npx @playwright/mcp@latest --port 8931 &
-        sleep 5  # Give the server time to start
+        npx @playwright/mcp@0.0.13 --port 8931 &
+        sleep 10  # Increased server startup time to 10 seconds
       shell: bash
 
     - name: Run URL comparison

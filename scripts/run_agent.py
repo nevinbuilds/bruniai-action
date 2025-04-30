@@ -198,12 +198,12 @@ async def managed_mcp_server():
         # Increase timeout for MCP server connection
         mcp_server = MCPServerSse(params=MCPServerSseParams(
             url="http://localhost:8931/sse",
-            request_timeout=30  # Increased from default 5 seconds to 30 seconds
+            request_timeout=60  # Increased from 30 seconds to 60 seconds
         ))
 
         # Try to connect with retries
-        max_retries = 3
-        retry_delay = 5
+        max_retries = 5
+        retry_delay = 10
         for attempt in range(1, max_retries + 1):
             try:
                 logger.info(f"Connecting to MCP server (attempt {attempt}/{max_retries})...")
