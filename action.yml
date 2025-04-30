@@ -55,7 +55,7 @@ runs:
         echo "Starting MCP Server..."
         npx @playwright/mcp@latest --port 8931 &
         # Increased wait time to ensure server is ready
-        sleep 20
+        sleep 30
       shell: bash
 
     - name: Run URL comparison
