@@ -378,6 +378,28 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
         logger.error(f"Error during image analysis: {e}")
         return f"Error performing image analysis: {str(e)}"
 
+async def ensure_browser_installed(mcp_server):
+    """Explicitly install the browser using the browser_install MCP tool."""
+    try:
+        logger.info("Explicitly installing browser through MCP browser_install tool...")
+
+        browser_install_request = {
+            "method": "browser_install",
+            "params": {}
+        }
+
+        # Use a longer timeout for the browser installation
+        await asyncio.wait_for(
+            mcp_server.execute(browser_install_request),
+            timeout=180  # 3 minutes timeout for browser installation
+        )
+
+        logger.info("✅ Browser successfully installed through MCP")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Failed to install browser through MCP: {e}")
+        return False
+
 async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
     """Analyze the base URL to identify its sections structure."""
     try:
@@ -393,6 +415,9 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
             logger.info("Updated MCP server timeout to 120 seconds")
         except Exception as e:
             logger.warning(f"Could not update MCP server timeout: {e}")
+
+        # First ensure browser is installed
+        await ensure_browser_installed(mcp_server)
 
         # Identify sections in the base URL
         section_agent = Agent(
@@ -515,7 +540,12 @@ async def main():
 
     async with managed_mcp_server() as mcp_server:
         try:
-            # First get the sections analysis
+            # First explicitly install browser through MCP
+            browser_installed = await ensure_browser_installed(mcp_server)
+            if not browser_installed:
+                logger.warning("Failed to install browser through MCP. Continuing anyway, but operations might fail.")
+
+            # Get sections analysis
             sections_analysis = await analyze_sections_side_by_side(mcp_server, args.base_url, args.pr_url)
 
             # Then perform visual analysis with the sections information
