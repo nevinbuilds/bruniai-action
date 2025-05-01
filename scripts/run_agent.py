@@ -381,23 +381,47 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
 async def ensure_browser_installed(mcp_server):
     """Explicitly install the browser using the browser_install MCP tool."""
     try:
-        logger.info("Explicitly installing browser through MCP browser_install tool...")
+        logger.info("Explicitly installing browser through direct Playwright command...")
 
-        browser_install_request = {
-            "method": "browser_install",
-            "params": {}
-        }
+        # Try direct browser installation using subprocess first
+        try:
+            logger.info("Installing browser via direct npx playwright command...")
+            subprocess.run(
+                ["npx", "playwright", "install", "--with-deps", "chromium"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            logger.info("Direct browser installation successful")
+        except Exception as e:
+            logger.warning(f"Direct browser installation failed: {e}")
 
-        # Use a longer timeout for the browser installation
-        await asyncio.wait_for(
-            mcp_server.execute(browser_install_request),
-            timeout=180  # 3 minutes timeout for browser installation
+        # Then try MCP agent method as backup
+        logger.info("Installing browser via MCP agent...")
+        install_agent = Agent(
+            name="BrowserInstaller",
+            instructions="""You need to install the browser using the browser_install tool.
+            This is required before any browser operations can be performed.
+            Specifically use the browser_install tool without any parameters.
+            This is the first step that must be done.""",
+            mcp_servers=[mcp_server]
         )
 
-        logger.info("✅ Browser successfully installed through MCP")
+        # Try to run the browser installation prompt
+        try:
+            result = await Runner.run(
+                install_agent,
+                "Please install the browser by using the browser_install tool"
+            )
+            logger.info("MCP browser installation completed")
+        except Exception as e:
+            logger.warning(f"MCP agent browser installation failed: {e}")
+            # Continue anyway as direct installation might have succeeded
+
+        logger.info("✅ Browser installation attempts completed")
         return True
     except Exception as e:
-        logger.error(f"❌ Failed to install browser through MCP: {e}")
+        logger.error(f"❌ Failed to install browser: {e}")
         return False
 
 async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):

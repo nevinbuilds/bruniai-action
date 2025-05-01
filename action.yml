@@ -46,7 +46,10 @@ runs:
       run: |
         npm install @playwright/mcp@latest
         npx playwright install --with-deps chromium
-        npx playwright install-deps chromium
+        # Install browser directly to ensure it's available
+        npx playwright install chromium
+        # Verify browser installation
+        ls -la $(npx playwright install --dry-run chromium | grep -o "cache/.*" || echo "browser not found")
       shell: bash
 
     - name: Start MCP Server
@@ -56,6 +59,8 @@ runs:
         npx @playwright/mcp@latest --port 8931 &
         # Increased wait time to ensure server is ready
         sleep 30
+        # Test the MCP server
+        curl -s http://localhost:8931/health || echo "Warning: MCP server health check failed"
       shell: bash
 
     - name: Run URL comparison
