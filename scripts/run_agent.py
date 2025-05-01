@@ -195,19 +195,15 @@ Runner.run = rate_limit()(Runner.run)
 async def managed_mcp_server():
     mcp_server = None
     try:
-        # Create MCP server instance with increased timeout
-        params = MCPServerSseParams(
+        # Increase timeout for MCP server connection
+        mcp_server = MCPServerSse(params=MCPServerSseParams(
             url="http://localhost:8931/sse",
-            request_timeout=120  # Increased from default 5 seconds to 120 seconds
-        )
-        mcp_server = MCPServerSse(params=params)
-
-        # Log the params for debugging
-        logger.info(f"MCP server parameters: {vars(params) if hasattr(params, '__dict__') else params}")
+            request_timeout=30  # Increased from default 5 seconds to 30 seconds
+        ))
 
         # Try to connect with retries
-        max_retries = 5
-        retry_delay = 10
+        max_retries = 3
+        retry_delay = 5
         for attempt in range(1, max_retries + 1):
             try:
                 logger.info(f"Connecting to MCP server (attempt {attempt}/{max_retries})...")
@@ -220,7 +216,6 @@ async def managed_mcp_server():
                     logger.info(f"Retrying in {retry_delay} seconds...")
                     await asyncio.sleep(retry_delay)
                 else:
-                    logger.error(f"Failed to connect to MCP server after {max_retries} attempts: {e}")
                     raise
 
         yield mcp_server
@@ -378,70 +373,10 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
         logger.error(f"Error during image analysis: {e}")
         return f"Error performing image analysis: {str(e)}"
 
-async def ensure_browser_installed(mcp_server):
-    """Explicitly install the browser using the browser_install MCP tool."""
-    try:
-        logger.info("Explicitly installing browser through direct Playwright command...")
-
-        # Try direct browser installation using subprocess first
-        try:
-            logger.info("Installing browser via direct npx playwright command...")
-            subprocess.run(
-                ["npx", "playwright", "install", "--with-deps", "chromium"],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            logger.info("Direct browser installation successful")
-        except Exception as e:
-            logger.warning(f"Direct browser installation failed: {e}")
-
-        # Then try MCP agent method as backup
-        logger.info("Installing browser via MCP agent...")
-        install_agent = Agent(
-            name="BrowserInstaller",
-            instructions="""You need to install the browser using the browser_install tool.
-            This is required before any browser operations can be performed.
-            Specifically use the browser_install tool without any parameters.
-            This is the first step that must be done.""",
-            mcp_servers=[mcp_server]
-        )
-
-        # Try to run the browser installation prompt
-        try:
-            result = await Runner.run(
-                install_agent,
-                "Please install the browser by using the browser_install tool"
-            )
-            logger.info("MCP browser installation completed")
-        except Exception as e:
-            logger.warning(f"MCP agent browser installation failed: {e}")
-            # Continue anyway as direct installation might have succeeded
-
-        logger.info("✅ Browser installation attempts completed")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Failed to install browser: {e}")
-        return False
-
 async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
     """Analyze the base URL to identify its sections structure."""
     try:
         logger.info(f"\n{'='*50}\n🔍 Starting base URL section analysis\n{'='*50}")
-
-        # Update the mcp_server timeout if possible
-        try:
-            if hasattr(mcp_server, 'params'):
-                if isinstance(mcp_server.params, dict):
-                    mcp_server.params['request_timeout'] = 120
-                elif hasattr(mcp_server.params, 'request_timeout'):
-                    mcp_server.params.request_timeout = 120
-            logger.info("Updated MCP server timeout to 120 seconds")
-        except Exception as e:
-            logger.warning(f"Could not update MCP server timeout: {e}")
-
-        # First ensure browser is installed
-        await ensure_browser_installed(mcp_server)
 
         # Identify sections in the base URL
         section_agent = Agent(
@@ -564,12 +499,7 @@ async def main():
 
     async with managed_mcp_server() as mcp_server:
         try:
-            # First explicitly install browser through MCP
-            browser_installed = await ensure_browser_installed(mcp_server)
-            if not browser_installed:
-                logger.warning("Failed to install browser through MCP. Continuing anyway, but operations might fail.")
-
-            # Get sections analysis
+            # First get the sections analysis
             sections_analysis = await analyze_sections_side_by_side(mcp_server, args.base_url, args.pr_url)
 
             # Then perform visual analysis with the sections information
