@@ -17,6 +17,7 @@ import numpy as np
 import subprocess
 import base64
 from playwright.async_api import async_playwright
+import anyio
 
 # ----------------- Setup -------------------
 load_dotenv()
@@ -201,6 +202,11 @@ async def managed_mcp_server():
             request_timeout=30  # Increased from default 5 seconds to 30 seconds
         ))
 
+        # Add initial wait time to ensure MCP server is fully started
+        initial_wait = 10
+        logger.info(f"Waiting {initial_wait} seconds for MCP server to fully start...")
+        await asyncio.sleep(initial_wait)
+
         # Try to connect with retries
         max_retries = 3
         retry_delay = 5
@@ -210,6 +216,14 @@ async def managed_mcp_server():
                 await mcp_server.connect()
                 logger.info("🔌 Connected to MCP server")
                 break
+            except anyio.WouldBlock as e:
+                if attempt < max_retries:
+                    logger.warning(f"MCP server not ready yet (attempt {attempt}/{max_retries}): {e}")
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error("MCP server failed to become ready after all retries")
+                    raise
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(f"Failed to connect to MCP server (attempt {attempt}/{max_retries}): {e}")
