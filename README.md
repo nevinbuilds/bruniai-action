@@ -20,10 +20,62 @@ jobs:
       - name: Run Visual Regression Test
         uses: nevinbuilds/bruniai-action@v1.11
         with:
+          # Your production URL.
           base-url: "https://www.example.com/"
           # Update to your preview URL format.
           pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
 ```
+
+### Preview URL format
+
+The preview URL format depends on your deployment platform. Here are the common formats:
+
+#### Vercel Preview URLs
+
+Vercel automatically creates preview deployments for pull requests. The URL format is:
+
+```
+https://[project-name]-git-[branch-name]-[username].vercel.app
+```
+
+Example:
+
+```yaml
+pr-url: "https://myapp-git-${{ github.head_ref }}-myusername.vercel.app"
+```
+
+#### Netlify Preview URLs
+
+Netlify creates preview deployments with the following format:
+
+```
+https://deploy-preview-[PR-number]--[site-name].netlify.app
+```
+
+Example:
+
+```yaml
+pr-url: "https://deploy-preview-${{ github.event.pull_request.number }}--myapp.netlify.app"
+```
+
+#### Finding Your Preview URL Format
+
+1. **For Vercel**:
+
+   - Go to your Vercel dashboard
+   - Click on your project
+   - Look at the preview deployment URLs for recent PRs
+   - The format will be consistent across all preview deployments
+
+2. **For Netlify**:
+   - Go to your Netlify dashboard
+   - Click on your site
+   - Look at the "Deploy previews" section
+   - The URL format will follow the pattern shown above
+
+#### Custom Domains
+
+If you're using custom domains, replace the platform-specific domain with your custom domain while keeping the preview-specific parts of the URL.
 
 ## Features
 
