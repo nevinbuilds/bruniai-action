@@ -1,10 +1,10 @@
-# Visual Regression Testing with Playwright and OpenAI
+# 🎨 Visual Regression Testing with Playwright and OpenAI
 
 This GitHub Action automates visual regression testing by comparing screenshots and highlighting differences between production and pull request versions. It's perfect for CI/CD pipelines, helping teams catch unintended visual changes in web applications, design systems, and UI-driven projects.
 
-## Quick Start
+## 🚀 Quick Start
 
-Add this to your workflow file (`.github/workflows/visual-regression.yml`):
+Add this to your existing workflow file or or create a workflow file like this if you don't have one (e.g. `.github/workflows/visual-regression.yml`):
 
 ```yaml
 name: Visual Regression Test
@@ -26,11 +26,11 @@ jobs:
           pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
 ```
 
-### Preview URL format
+### 🔍 Preview URL format
 
 The preview URL format depends on your deployment platform. Here are the common formats:
 
-#### Vercel Preview URLs
+#### 🌐 Vercel Preview URLs
 
 Vercel automatically creates preview deployments for pull requests. The URL format is:
 
@@ -44,7 +44,7 @@ Example:
 pr-url: "https://myapp-git-${{ github.head_ref }}-myusername.vercel.app"
 ```
 
-#### Netlify Preview URLs
+#### 🏗️ Netlify Preview URLs
 
 Netlify creates preview deployments with the following format:
 
@@ -58,7 +58,7 @@ Example:
 pr-url: "https://deploy-preview-${{ github.event.pull_request.number }}--myapp.netlify.app"
 ```
 
-#### Finding Your Preview URL Format
+#### 🔎 Finding Your Preview URL Format
 
 1. **For Vercel**:
 
@@ -73,19 +73,19 @@ pr-url: "https://deploy-preview-${{ github.event.pull_request.number }}--myapp.n
    - Look at the "Deploy previews" section
    - The URL format will follow the pattern shown above
 
-#### Custom Domains
+#### 🌍 Custom Domains
 
 If you're using custom domains, replace the platform-specific domain with your custom domain while keeping the preview-specific parts of the URL.
 
-## Features
+## ✨ Features
 
-- Automated screenshot comparison
-- AI-powered analysis of visual changes
-- GitHub PR integration
-- Detailed reporting
-- Easy CI/CD integration
+- 📸 Automated screenshot comparison
+- 🤖 AI-powered analysis of visual changes
+- 🔄 GitHub PR integration
+- 📊 Detailed reporting
+- ⚡ Easy CI/CD integration
 
-## Documentation
+## 📚 Documentation
 
 - [Getting Started](docs/getting-started.md) - Local development setup
 - [Configuration Guide](docs/configuration.md) - Configuration options
@@ -95,11 +95,11 @@ If you're using custom domains, replace the platform-specific domain with your c
 - [Contributing](docs/contributing.md) - How to contribute
 - [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
 
-## Requirements
+## 📋 Requirements
 
-- GitHub repository
-- OpenAI API key (set as `OPENAI_API_KEY` secret in your repository)
+- 📦 GitHub repository
+- 🔑 OpenAI API key (set as `OPENAI_API_KEY` secret in your repository)
 
-## License
+## 📄 License
 
 See [LICENSE](LICENSE) for details.
