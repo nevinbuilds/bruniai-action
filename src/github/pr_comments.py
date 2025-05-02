@@ -31,6 +31,7 @@ def post_pr_comment(summary: str):
     github_token = os.getenv("GITHUB_TOKEN")
     repo = os.getenv("GITHUB_REPOSITORY")  # e.g. 'org/repo'
     pr_number = os.getenv("PR_NUMBER") or get_pr_number_from_event()
+    run_id = os.getenv("GITHUB_RUN_ID")
 
     logger.info(f"GITHUB_TOKEN: {github_token}")
     logger.info(f"GITHUB_REPOSITORY: {repo}")
@@ -39,6 +40,11 @@ def post_pr_comment(summary: str):
     if not all([github_token, repo, pr_number]):
         logger.warning("Missing GitHub context, skipping PR comment.")
         return
+
+    # Add artifact links to the summary
+    if run_id:
+        artifacts_url = f"https://github.com/{repo}/actions/runs/{run_id}"
+        summary = f"{summary}\n\n📦 [View Artifacts]({artifacts_url}) for more details including screenshots."
 
     # First, try to find an existing comment from our tool
     headers = {
