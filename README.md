@@ -4,7 +4,7 @@ This GitHub Action automates visual regression testing by comparing screenshots 
 
 ## 🚀 Quick Start
 
-Add this to your workflow file (`.github/workflows/visual-regression.yml`):
+Add this to your existing workflow file or or create a workflow file like this if you don't have one (e.g. `.github/workflows/visual-regression.yml`):
 
 ```yaml
 name: Visual Regression Test
