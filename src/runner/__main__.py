@@ -80,8 +80,10 @@ async def main():
             # Combine both analyses
             final_summary = (
                 "# URL Comparison Analysis\n\n"
-                "## Structural Analysis\n"
-                f"{sections_analysis}\n\n"
+                "<details>\n"
+                "<summary>Structural Analysis</summary>\n\n"
+                f"{sections_analysis}\n"
+                "</details>\n\n"
                 "## Visual Analysis\n"
                 f"{visual_analysis}"
             )
