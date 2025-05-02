@@ -92,7 +92,7 @@ async def main():
 
             # Combine both analyses
             final_summary = (
-                "# URL Comparison Analysis\n\n"
+                "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)"
                 "<details>\n"
                 "<summary>Structural Analysis</summary>\n\n"
                 f"{sections_analysis}\n"
