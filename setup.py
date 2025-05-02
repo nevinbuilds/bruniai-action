@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name="bruniai",
     version="0.1.0",
-    packages=find_packages(),
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     install_requires=[
         "openai-agents>=0.0.11",
         "asyncio>=3.4.3",
@@ -25,4 +26,9 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    entry_points={
+        "console_scripts": [
+            "bruniai=runner.__main__:main",
+        ],
+    },
 )
