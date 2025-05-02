@@ -9,14 +9,14 @@ from openai import RateLimitError
 from agents import Agent, Runner
 
 # Import from our modules
-from playwright.screenshot import take_screenshot_with_playwright
-from playwright.bounding_boxes import extract_section_bounding_boxes
-from github.pr_comments import post_pr_comment
-from image_processing.diff import generate_diff_image
-from analysis.vision import analyze_images_with_vision
-from analysis.sections import analyze_sections_side_by_side
-from core.mcp import managed_mcp_server
-from core.rate_limit import rate_limit
+from src.playwright.screenshot import take_screenshot_with_playwright
+from src.playwright.bounding_boxes import extract_section_bounding_boxes
+from src.github.pr_comments import post_pr_comment
+from src.image_processing.diff import generate_diff_image
+from src.analysis.vision import analyze_images_with_vision
+from src.analysis.sections import analyze_sections_side_by_side
+from src.core.mcp import managed_mcp_server
+from src.core.rate_limit import rate_limit
 
 # ----------------- Setup -------------------
 load_dotenv()
