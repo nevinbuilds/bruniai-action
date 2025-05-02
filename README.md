@@ -26,6 +26,17 @@ jobs:
           pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
 ```
 
+## 📋 Requirements
+
+- 📦 GitHub repository
+- 🔑 OpenAI API key (set as `OPENAI_API_KEY` secret in your repository in `/settings/secrets/actions`)
+- 🔐 GitHub token with the following permissions to the repository:
+
+  - Read access to code, deployments, and metadata
+  - Read and Write access to commit statuses and pull requests
+
+The token is automatically provided by GitHub Actions as `GITHUB_TOKEN` when running in a workflow.
+
 ### 🔍 Preview URL format
 
 The preview URL format depends on your deployment platform. Here are the common formats:
@@ -94,11 +105,6 @@ If you're using custom domains, replace the platform-specific domain with your c
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 - [Contributing](docs/contributing.md) - How to contribute
 - [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
-
-## 📋 Requirements
-
-- 📦 GitHub repository
-- 🔑 OpenAI API key (set as `OPENAI_API_KEY` secret in your repository)
 
 ## 📄 License
 
