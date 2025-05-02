@@ -1,20 +1,16 @@
 from setuptools import setup, find_packages
 
+def read_requirements():
+    with open('requirements.txt') as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith('#')]
+
 setup(
     name="bruniai",
     version="0.1.0",
     package_dir={"": "src"},
     packages=find_packages(where="src", include=["*"]),
     include_package_data=True,
-    install_requires=[
-        "openai-agents>=0.0.11",
-        "asyncio>=3.4.3",
-        "python-dotenv>=1.0.0",
-        "pillow>=11.2.1",
-        "numpy>=2.2.4",
-        "playwright>=1.42.0",
-        "requests>=2.31.0",
-    ],
+    install_requires=read_requirements(),
     python_requires=">=3.10",
     author="Joao Garin",
     author_email="joao@nevinbuilds.com",
