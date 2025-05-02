@@ -9,8 +9,8 @@ from openai import RateLimitError
 from agents import Agent, Runner
 
 # Import from our modules
-from playwright.screenshot import take_screenshot_with_playwright
-from playwright.bounding_boxes import extract_section_bounding_boxes
+from playwright_utils.screenshot import take_screenshot_with_playwright
+from playwright_utils.bounding_boxes import extract_section_bounding_boxes
 from github.pr_comments import post_pr_comment
 from image_processing.diff import generate_diff_image
 from analysis.vision import analyze_images_with_vision
