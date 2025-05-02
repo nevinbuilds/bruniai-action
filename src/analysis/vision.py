@@ -93,8 +93,8 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                        - Provide a pass/review recommendation
 
                     Example of the alert format:
-                    <[!TIP]
-                    < This is a tip alert
+                    > [!TIP]
+                    > This is a tip alert
                 """
             }
         ]
