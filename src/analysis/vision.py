@@ -29,7 +29,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
 
                     Critical checks (Must be performed first):
-                    1. MISSING SECTIONS CHECK:
+                    1. Section presence check:
                        - For each section described in the section analysis, **explicitly check if that section is visually present in the PR image**.
                        - **Iterate through the list of sections one by one. For each, state whether it is present or missing in the PR image.**
                        - A missing section is a CRITICAL issue and should be reported prominently.
@@ -38,14 +38,14 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                        - Use the sections analysis to guide your decisions, the analysis will be delimited by <<<>>>.
                        - If the section animates or moves make sure to point it out and take in consideration to not flag as visual regression on things that are animating.
 
-                    2. STRUCTURAL CHANGES CHECK:
+                    2. Structural changes check:
                        - Identify if sections have moved positions
                        - Check if the overall layout structure has changed
                        - Verify if major UI components have been relocated
                        - These are considered significant issues
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
 
-                    3. VISUAL HIERARCHY CHECK:
+                    3. Visual hierarchy check:
                        - Verify if the visual hierarchy of elements remains consistent
                        - Check if important UI elements maintain their relative positioning
                        - Ensure navigation elements remain accessible
@@ -87,10 +87,14 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     </details>
 
                     Conclusion:
+                       - When passing use an alert of type [!TIP] for github and when recommending a review use an alert of type [!WARNING] (see information below for the format)
                        - Clearly state if there are any critical issues
                        - Even if there are not critical issues, always describe where any visual changes are and why they are not critical.
                        - Provide a pass/review recommendation
-                       - When passing use an alert of type [!TIP] for github and when recommending a review use an alert of type [!WARNING].
+
+                    Example of the alert format:
+                    <[!TIP]
+                    < This is a tip alert
                 """
             }
         ]
