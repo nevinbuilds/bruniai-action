@@ -17,7 +17,7 @@ from analysis.vision import analyze_images_with_vision
 from analysis.sections import analyze_sections_side_by_side
 from core.mcp import managed_mcp_server
 from core.rate_limit import rate_limit
-
+from github.pr_metadata import fetch_pr_metadata
 # ----------------- Setup -------------------
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -41,8 +41,7 @@ async def main():
     logger.info(f"\n{'='*50}\nStarting URL comparison\nBase URL: {args.base_url}\nPreview URL: {args.pr_url}\n{'='*50}")
 
     # Get PR information from GitHub environment variables
-    pr_title = os.getenv("GITHUB_PR_TITLE")
-    pr_description = os.getenv("GITHUB_PR_BODY")
+    pr_title, pr_description = fetch_pr_metadata()
 
     if pr_title:
         logger.info(f"PR Title: {pr_title}")
