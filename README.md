@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Visual Regression Test
-        uses: ./
+        uses: nevinbuilds/bruniai-action@v1.11
         with:
           base-url: "https://www.example.com/"
           # Update to your preview URL format.
