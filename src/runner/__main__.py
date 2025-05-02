@@ -40,6 +40,15 @@ async def main():
 
     logger.info(f"\n{'='*50}\nStarting URL comparison\nBase URL: {args.base_url}\nPreview URL: {args.pr_url}\n{'='*50}")
 
+    # Get PR information from GitHub environment variables
+    pr_title = os.getenv("GITHUB_PR_TITLE")
+    pr_description = os.getenv("GITHUB_PR_BODY")
+
+    if pr_title:
+        logger.info(f"PR Title: {pr_title}")
+    if pr_description:
+        logger.info(f"PR Description (truncated): {pr_description[:200]}...")
+
     # Ensure the images directory exists in the workspace
     images_dir = os.path.join(GITHUB_WORKSPACE, "images")
     os.makedirs(images_dir, exist_ok=True)
@@ -75,7 +84,14 @@ async def main():
             sections_analysis = await analyze_sections_side_by_side(mcp_server, args.base_url, args.pr_url)
 
             # Then perform visual analysis with the sections information
-            visual_analysis = await analyze_images_with_vision(base_screenshot, pr_screenshot, diff_output_path, sections_analysis)
+            visual_analysis = await analyze_images_with_vision(
+                base_screenshot,
+                pr_screenshot,
+                diff_output_path,
+                sections_analysis,
+                pr_title=pr_title,
+                pr_description=pr_description
+            )
 
             # Combine both analyses
             final_summary = (

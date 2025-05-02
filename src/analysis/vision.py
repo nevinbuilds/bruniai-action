@@ -4,8 +4,17 @@ import openai
 
 logger = logging.getLogger("agent-runner")
 
-async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, diff_image: str, sections_analysis: str = None):
-    """Analyze screenshots using GPT-4 Vision API to identify visual differences."""
+async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, diff_image: str, sections_analysis: str = None, pr_title: str = None, pr_description: str = None):
+    """Analyze screenshots using GPT-4 Vision API to identify visual differences.
+
+    Args:
+        base_screenshot: Path to the base screenshot
+        pr_screenshot: Path to the PR screenshot
+        diff_image: Path to the diff image
+        sections_analysis: Optional analysis of website sections
+        pr_title: Optional PR title for context
+        pr_description: Optional PR description for context (will be truncated if too long)
+    """
     logger.info(f"\n{'='*50}\n🔍 Starting image-based analysis\n{'='*50}")
 
     try:
@@ -98,6 +107,21 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                 """
             }
         ]
+
+        # Add PR context if available
+        if pr_title or pr_description:
+            pr_context = []
+            if pr_title:
+                pr_context.append(f"PR Title: {pr_title}")
+            if pr_description:
+                # Truncate description to 200 characters
+                truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "")
+                pr_context.append(f"PR Description: {truncated_desc}")
+
+            messages.append({
+                "role": "user",
+                "content": f"Here is the context about this PR:\n\n{' '.join(pr_context)}\n\nUse this information to better understand the expected changes in the screenshots."
+            })
 
         if sections_analysis:
             messages.append({
