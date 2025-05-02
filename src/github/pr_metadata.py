@@ -1,13 +1,14 @@
 import requests
 import os
 import logging
+from github.pr_comments import get_pr_number_from_event
 
 logger = logging.getLogger("agent-runner")
 
 def fetch_pr_metadata():
     github_token = os.getenv("GITHUB_TOKEN")
     repo = os.getenv("GITHUB_REPOSITORY")
-    pr_number = os.getenv("GITHUB_REF", "").split("/")[-1]  # e.g., refs/pull/123/merge
+    pr_number = os.getenv("PR_NUMBER") or get_pr_number_from_event()
 
     if not github_token or not repo or not pr_number.isdigit():
         logger.warning("Cannot fetch PR metadata: missing token, repo, or PR number")
