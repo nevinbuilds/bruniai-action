@@ -4,7 +4,8 @@ setup(
     name="bruniai",
     version="0.1.0",
     package_dir={"": "src"},
-    packages=find_packages(where="src"),
+    packages=find_packages(where="src", include=["*"]),
+    include_package_data=True,
     install_requires=[
         "openai-agents>=0.0.11",
         "asyncio>=3.4.3",
