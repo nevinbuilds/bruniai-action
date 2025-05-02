@@ -28,7 +28,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                 "content": """
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
 
-                    CRITICAL CHECKS (Must be performed first):
+                    Critical checks (Must be performed first):
                     1. MISSING SECTIONS CHECK:
                        - For each section described in the section analysis, **explicitly check if that section is visually present in the PR image**.
                        - **Iterate through the list of sections one by one. For each, state whether it is present or missing in the PR image.**
@@ -51,7 +51,7 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                        - Ensure navigation elements remain accessible
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
 
-                    NON-CRITICAL CHANGES (Should be noted but not flagged as issues):
+                    Non-critical changes (Should be noted but not flagged as issues):
                     - Text content changes
                     - Menu item text updates
                     - Headline modifications
@@ -60,27 +60,37 @@ async def analyze_images_with_vision(base_screenshot: str, pr_screenshot: str, d
                     - Minor styling changes that don't affect layout
                     - If the section animates or moves
 
-                    FORMAT YOUR RESPONSE AS FOLLOWS:
-                    1. CRITICAL ISSUES (if any):
-                       - **For each section in the analysis, state:**
-                         - Section Name: [Present/Missing]
-                         - If missing, describe its expected location and content.
+                    Format your response as follows:
+                    <details>
+                    <summary>Critical issues</summary>
+
+                    For each section in the analysis, state:
+                       - Section Name: [Present/Missing]
+                       - If missing, describe its expected location and content.
                        - List any major structural changes
                        - List any broken layouts
+                    </details>
 
-                    2. STRUCTURAL ANALYSIS:
-                       - Compare each section's presence and position
+                    <details>
+                    <summary>Structural analysis</summary>
+
+                    Compare each section's presence and position
                        - Note any layout modifications
+                    </details>
 
-                    3. VISUAL CHANGES:
-                       - Document non-critical changes
+                    <details>
+                    <summary>Visual changes</summary>
+
+                    Document non-critical changes
                        - Note any styling updates
                        - If a section is animating or moving, report that it is animating or moving as that can be the cause of a diff in a section.
+                    </details>
 
-                    4. CONCLUSION:
+                    Conclusion:
                        - Clearly state if there are any critical issues
                        - Even if there are not critical issues, always describe where any visual changes are and why they are not critical.
-                       - Provide a pass/fail recommendation
+                       - Provide a pass/review recommendation
+                       - When passing use an alert of type [!TIP] for github and when recommending a review use an alert of type [!WARNING].
                 """
             }
         ]
