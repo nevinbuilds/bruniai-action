@@ -43,10 +43,8 @@ async def main():
     # Get PR information from GitHub environment variables
     pr_title, pr_description = fetch_pr_metadata()
 
-    if pr_title:
-        logger.info(f"PR Title: {pr_title}")
-    if pr_description:
-        logger.info(f"PR Description (truncated): {pr_description[:200]}...")
+    logger.info(f"PR Title: {pr_title}")
+    logger.info(f"PR Description: {pr_description}")
 
     # Ensure the images directory exists in the workspace
     images_dir = os.path.join(GITHUB_WORKSPACE, "images")
