@@ -93,6 +93,7 @@ If you're using custom domains, replace the platform-specific domain with your c
 - [Architecture](docs/architecture.md) - System overview
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 - [Contributing](docs/contributing.md) - How to contribute
+- [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
 
 ## Requirements
 
@@ -101,4 +102,4 @@ If you're using custom domains, replace the platform-specific domain with your c
 
 ## License
 
-[Add your license here]
+See [LICENSE](LICENSE) for details.
