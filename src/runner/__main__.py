@@ -101,12 +101,9 @@ async def main():
                 f"{visual_analysis}"
             )
 
-            # Try to post to GitHub if possible, otherwise just log
-            if os.getenv("GITHUB_TOKEN"):
-                post_pr_comment(final_summary)
-            else:
-                logger.info("GitHub environment variables not found. Skipping PR comment.")
-                logger.info("Complete analysis has been logged above.")
+            # Post to GitHub
+            post_pr_comment(final_summary)
+            logger.info("Complete analysis has been logged above.")
 
         except RateLimitError as e:
             logger.error("🚫 Rate limit or quota hit: %s", e)

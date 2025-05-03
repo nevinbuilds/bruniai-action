@@ -1,17 +1,23 @@
 import requests
 import os
 import logging
-from github.pr_comments import get_pr_number_from_event
+from .auth import get_github_app_token
+from .pr_comments import get_pr_number_from_event
 
 logger = logging.getLogger("agent-runner")
 
 def fetch_pr_metadata():
-    github_token = os.getenv("GITHUB_TOKEN")
+    # Get GitHub App token
+    github_token = get_github_app_token()
+    if not github_token:
+        logger.error("Failed to get GitHub App token")
+        return None, None
+
     repo = os.getenv("GITHUB_REPOSITORY")
     pr_number = os.getenv("PR_NUMBER") or get_pr_number_from_event()
 
-    if not github_token or not repo or not pr_number:
-        logger.warning("Cannot fetch PR metadata: missing token, repo, or PR number")
+    if not repo or not pr_number:
+        logger.warning("Cannot fetch PR metadata: missing repo or PR number")
         return None, None
 
     headers = {

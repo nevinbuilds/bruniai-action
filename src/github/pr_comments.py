@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import requests
+from .auth import get_github_app_token
 
 logger = logging.getLogger("agent-runner")
 
@@ -28,16 +29,20 @@ def get_pr_number_from_event():
         return None
 
 def post_pr_comment(summary: str):
-    github_token = os.getenv("GITHUB_TOKEN")
+    # Get GitHub App token
+    github_token = get_github_app_token()
+    if not github_token:
+        logger.error("Failed to get GitHub App token")
+        return
+
     repo = os.getenv("GITHUB_REPOSITORY")  # e.g. 'org/repo'
     pr_number = os.getenv("PR_NUMBER") or get_pr_number_from_event()
     run_id = os.getenv("GITHUB_RUN_ID")
 
-    logger.info(f"GITHUB_TOKEN: {github_token}")
     logger.info(f"GITHUB_REPOSITORY: {repo}")
     logger.info(f"PR_NUMBER: {pr_number}")
 
-    if not all([github_token, repo, pr_number]):
+    if not all([repo, pr_number]):
         logger.warning("Missing GitHub context, skipping PR comment.")
         return
 
