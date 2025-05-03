@@ -3,7 +3,6 @@ import jwt
 import time
 import requests
 import logging
-from pathlib import Path
 
 logger = logging.getLogger("agent-runner")
 
@@ -12,13 +11,9 @@ APP_ID = "1239933"
 
 def get_github_app_token():
     """Get a GitHub App installation access token."""
-    # Get the private key from the file in the repository
-    private_key_path = Path(__file__).parent.parent.parent / "private-key.pem"
-    try:
-        with open(private_key_path, 'r') as f:
-            private_key = f.read()
-    except Exception as e:
-        logger.error(f"Failed to read private key: {e}")
+    private_key = os.getenv("GITHUB_APP_PRIVATE_KEY")
+    if not private_key:
+        logger.error("Missing GITHUB_APP_PRIVATE_KEY")
         return None
 
     installation_id = os.getenv("GITHUB_INSTALLATION_ID")

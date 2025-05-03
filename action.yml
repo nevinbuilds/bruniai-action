@@ -20,6 +20,9 @@ secrets:
   OPENAI_API_KEY:
     description: "OpenAI API key for the agent"
     required: true
+  APP_PRIVATE_KEY:
+    description: "GitHub App private key"
+    required: true
 
 runs:
   using: "composite"
@@ -58,7 +61,8 @@ runs:
     - name: Run URL comparison
       working-directory: ${{ github.action_path }}
       env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPENAI_API_KEY: ${{ env.OPENAI_API_KEY }}
+        GITHUB_APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
         PYTHONPATH: ${{ github.action_path }}
       run: |
         python src/runner/__main__.py \
