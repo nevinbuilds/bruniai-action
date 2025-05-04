@@ -11,15 +11,30 @@ APP_ID = "1239933"
 
 def get_github_app_token():
     """Get a GitHub App installation access token."""
+    # Debug: Log all environment variables
+    logger.info("Available environment variables:")
+    for key, value in os.environ.items():
+        if "GITHUB" in key:
+            logger.info(f"{key}: {value}")
+
     # Get the private key from the GitHub token
     private_key = os.getenv("GITHUB_TOKEN")
     if not private_key:
         logger.error("Missing GITHUB_TOKEN")
         return None
 
-    installation_id = os.getenv("GITHUB_INSTALLATION_ID")
+    # Try different possible names for the installation ID
+    installation_id = (
+        os.getenv("GITHUB_INSTALLATION_ID") or
+        os.getenv("GITHUB_APP_INSTALLATION_ID") or
+        os.getenv("INSTALLATION_ID")
+    )
+
     if not installation_id:
-        logger.error("Missing GITHUB_INSTALLATION_ID")
+        logger.error("Missing installation ID. Available GitHub-related env vars:")
+        for key, value in os.environ.items():
+            if "GITHUB" in key:
+                logger.error(f"{key}: {value}")
         return None
 
     # Generate JWT
