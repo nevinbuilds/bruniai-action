@@ -64,10 +64,12 @@ def get_github_app_token():
         # Create JWT
         encoded_jwt = jwt.encode(payload, private_key, algorithm='RS256')
 
+        logger.info(f"Encoded JWT: {encoded_jwt}")
+
         # Get installation access token
         headers = {
             'Authorization': f'Bearer {encoded_jwt}',
-            'Accept': 'application/vnd.github.v3+json'
+            'Accept': 'application/vnd.github+json'
         }
 
         response = requests.post(
