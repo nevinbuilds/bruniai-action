@@ -42,7 +42,7 @@ def post_pr_comment(summary: str):
     logger.info(f"GITHUB_REPOSITORY: {repo}")
     logger.info(f"PR_NUMBER: {pr_number}")
 
-    if not all([repo, pr_number]):
+    if not all([github_token, repo, pr_number]):
         logger.warning("Missing GitHub context, skipping PR comment.")
         return
 
