@@ -62,7 +62,7 @@ runs:
       working-directory: ${{ github.action_path }}
       env:
         OPENAI_API_KEY: ${{ env.OPENAI_API_KEY }}
-        GITHUB_APP_PRIVATE_KEY: ${{ github.token }}
+        GITHUB_APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
         PYTHONPATH: ${{ github.action_path }}
       run: |
         python src/runner/__main__.py \
