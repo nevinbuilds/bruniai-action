@@ -50,12 +50,21 @@ def get_github_app_token():
         return None
 
     try:
-        # Load the private key using cryptography
-        key = serialization.load_pem_private_key(
-            private_key.encode('utf-8'),
-            password=None,
-            backend=default_backend()
-        )
+        # Try to load the private key in different formats
+        try:
+            # First try as PEM
+            key = serialization.load_pem_private_key(
+                private_key.encode('utf-8'),
+                password=None,
+                backend=default_backend()
+            )
+        except Exception:
+            # If PEM fails, try as SSH
+            key = serialization.load_ssh_private_key(
+                private_key.encode('utf-8'),
+                password=None,
+                backend=default_backend()
+            )
 
         # Get installation ID from the event payload
         installation_id = get_installation_id()
