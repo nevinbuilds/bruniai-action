@@ -72,69 +72,6 @@ This guide helps you resolve common issues that may arise while using the Visual
    ```
 3. Ensure no firewall blocking the port
 
-#### Issue: Screenshot Capture
-
-**Symptoms:**
-
-- Blank screenshots
-- Partial captures
-- Timeout errors
-
-**Solutions:**
-
-1. Check network connectivity
-2. Verify URLs are accessible
-3. Ensure proper viewport settings
-
-### 3. Comparison Issues
-
-#### Issue: False Positives
-
-**Symptoms:**
-
-- Unnecessary differences detected
-- High number of false alerts
-
-**Solutions:**
-
-1. Exclude dynamic content:
-   - Configure ignore regions
-   - Use appropriate selectors
-2. Update baseline images
-
-#### Issue: False Negatives
-
-**Symptoms:**
-
-- Missed visual changes
-- Important differences not detected
-
-**Solutions:**
-
-1. Check viewport settings
-2. Verify image processing settings
-
-### 4. GitHub Actions Issues
-
-#### Issue: Action Failing
-
-**Symptoms:**
-
-- Workflow failures
-- Permission errors
-- Timeout issues
-
-**Solutions:**
-
-1. Check GitHub token permissions
-2. Increase job timeout:
-   ```yaml
-   jobs:
-     visual-regression:
-       timeout-minutes: 30
-   ```
-3. Verify repository settings
-
 #### Issue: Status Updates
 
 **Symptoms:**
@@ -162,25 +99,6 @@ This guide helps you resolve common issues that may arise while using the Visual
    node --version
    npm --version
    ```
-
-## Performance Issues
-
-### Slow Execution
-
-**Solutions:**
-
-1. Optimize viewport settings
-2. Reduce number of comparisons
-3. Clean up old test results
-
-### Memory Issues
-
-**Solutions:**
-
-1. Increase system resources
-2. Optimize image processing
-3. Use appropriate image formats
-4. Implement cleanup routines
 
 ## Getting Help
 
