@@ -11,9 +11,10 @@ APP_ID = "1239933"
 
 def get_github_app_token():
     """Get a GitHub App installation access token."""
-    private_key = os.getenv("GITHUB_APP_PRIVATE_KEY")
+    # Get the private key from the GitHub token
+    private_key = os.getenv("GITHUB_TOKEN")
     if not private_key:
-        logger.error("Missing GITHUB_APP_PRIVATE_KEY")
+        logger.error("Missing GITHUB_TOKEN")
         return None
 
     installation_id = os.getenv("GITHUB_INSTALLATION_ID")
