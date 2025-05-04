@@ -62,7 +62,6 @@ runs:
       working-directory: ${{ github.action_path }}
       env:
         OPENAI_API_KEY: ${{ env.OPENAI_API_KEY }}
-        GITHUB_APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
         GITHUB_TOKEN: ${{ github.token }}
         PYTHONPATH: ${{ github.action_path }}
       run: |
