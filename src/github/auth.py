@@ -4,7 +4,6 @@ import jwt
 import time
 import requests
 import logging
-import base64
 
 logger = logging.getLogger("agent-runner")
 
@@ -49,14 +48,6 @@ def get_github_app_token():
         return None
 
     try:
-        # Handle base64 padding
-        padding = len(private_key) % 4
-        if padding:
-            private_key += '=' * (4 - padding)
-
-        # Decode the base64-encoded private key
-        decoded_key = base64.b64decode(private_key).decode('utf-8')
-
         # Get installation ID from the event payload
         installation_id = get_installation_id()
         if not installation_id:
@@ -70,8 +61,9 @@ def get_github_app_token():
             'iss': APP_ID
         }
 
-        # Create JWT using the decoded private key
-        encoded_jwt = jwt.encode(payload, decoded_key, algorithm='RS256')
+        # Create JWT using the private key directly
+        # The private key should be in PEM format
+        encoded_jwt = jwt.encode(payload, private_key, algorithm='RS256')
 
         # Get installation access token
         headers = {
