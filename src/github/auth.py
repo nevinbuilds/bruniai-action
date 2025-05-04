@@ -4,6 +4,8 @@ import jwt
 import time
 import requests
 import logging
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 
 logger = logging.getLogger("agent-runner")
 
@@ -48,6 +50,13 @@ def get_github_app_token():
         return None
 
     try:
+        # Load the private key using cryptography
+        key = serialization.load_pem_private_key(
+            private_key.encode('utf-8'),
+            password=None,
+            backend=default_backend()
+        )
+
         # Get installation ID from the event payload
         installation_id = get_installation_id()
         if not installation_id:
@@ -61,9 +70,8 @@ def get_github_app_token():
             'iss': APP_ID
         }
 
-        # Create JWT using the private key directly
-        # The private key should be in PEM format
-        encoded_jwt = jwt.encode(payload, private_key, algorithm='RS256')
+        # Create JWT using the loaded private key
+        encoded_jwt = jwt.encode(payload, key, algorithm='RS256')
 
         # Get installation access token
         headers = {
