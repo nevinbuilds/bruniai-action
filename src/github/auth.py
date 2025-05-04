@@ -39,26 +39,6 @@ def get_installation_id():
         logger.error(f"Error reading installation ID from event: {e}")
         return None
 
-def format_private_key(private_key):
-    """Format the private key for use with PyJWT."""
-    if not private_key:
-        return None
-
-    # If the key is already in PEM format, return it
-    if private_key.startswith('-----BEGIN'):
-        return private_key
-
-    # Otherwise, format it as PEM
-    key_lines = []
-    key_lines.append('-----BEGIN RSA PRIVATE KEY-----')
-
-    # Split the key into 64-character chunks
-    for i in range(0, len(private_key), 64):
-        key_lines.append(private_key[i:i+64])
-
-    key_lines.append('-----END RSA PRIVATE KEY-----')
-    return '\n'.join(key_lines)
-
 def get_github_app_token():
     """Get a GitHub App installation access token."""
     # Get the private key from the environment
@@ -67,28 +47,22 @@ def get_github_app_token():
         logger.error("Missing GITHUB_APP_PRIVATE_KEY")
         return None
 
-    # Format the private key
-    formatted_key = format_private_key(private_key)
-    if not formatted_key:
-        logger.error("Failed to format private key")
-        return None
-
     # Get installation ID from the event payload
     installation_id = get_installation_id()
     if not installation_id:
         logger.error("Could not determine installation ID")
         return None
 
-    # Generate JWT
-    payload = {
-        'iat': int(time.time()),
-        'exp': int(time.time()) + 600,  # 10 minutes
-        'iss': APP_ID
-    }
-
     try:
-        # Create JWT
-        encoded_jwt = jwt.encode(payload, formatted_key, algorithm='RS256')
+        # Generate JWT as shown in GitHub docs
+        payload = {
+            'iat': int(time.time()),
+            'exp': int(time.time()) + 600,  # 10 minutes
+            'iss': APP_ID
+        }
+
+        # Create JWT using the private key directly
+        encoded_jwt = jwt.encode(payload, private_key, algorithm='RS256')
 
         # Get installation access token
         headers = {
