@@ -8,7 +8,6 @@ The following environment variables can be set in your `.env` file:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
-PLAYWRIGHT_MCP_PORT=8931
 ```
 
 ## Command Line Arguments
@@ -44,6 +43,9 @@ jobs:
         with:
           base-url: ${{ github.event.pull_request.base.ref }}
           pr-url: ${{ github.event.pull_request.head.ref }}
+
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 ## Best Practices

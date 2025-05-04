@@ -51,7 +51,7 @@ If you want to save artifacts in your github workflow add the following to the p
   - Read access to code, deployments, and metadata
   - Read and Write access to commit statuses and pull requests
 
-The Github token is automatically provided by the GitHub Action when installing the [bruniai](Bruniai) app in your repository.
+The Github token is automatically provided by the GitHub Action when installing the [bruniai](https://github.com/apps/bruniai) app in your repository.
 
 If you don't want to install the app you can provide the token as a env variable in your workflow similar to how you pass the openai key :
 
@@ -127,7 +127,6 @@ If you're using custom domains, replace the platform-specific domain with your c
 - [Getting Started](docs/getting-started.md) - Local development setup
 - [Configuration Guide](docs/configuration.md) - Configuration options
 - [Usage Examples](docs/usage-examples.md) - Common use cases
-- [Architecture](docs/architecture.md) - System overview
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 - [Contributing](docs/contributing.md) - How to contribute
 - [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines

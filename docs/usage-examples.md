@@ -30,8 +30,13 @@ jobs:
       - name: Run Visual Regression Test
         uses: ./
         with:
-          base-url: ${{ github.event.pull_request.base.ref }}
-          pr-url: ${{ github.event.pull_request.head.ref }}
+          # Your production URL.
+          base-url: "https://www.example.com/"
+          # Update to your preview URL format.
+          pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
+
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 ## Common Use Cases
@@ -54,35 +59,6 @@ Test your design system components:
 python3 -m src.runner \
   --base-url https://design.example.com \
   --pr-url https://pr-design.example.com
-```
-
-## Output Examples
-
-### Successful Test Output
-
-```
-Visual Regression Test Results
-=============================
-Base URL: https://www.example.com
-PR URL: https://pr-example.com
-
-AI Analysis:
-- No significant visual changes detected
-- Minor layout adjustments within acceptable range
-```
-
-### Failed Test Output
-
-```
-Visual Regression Test Results
-=============================
-Base URL: https://www.example.com
-PR URL: https://pr-example.com
-
-AI Analysis:
-- Significant layout changes detected in header
-- Color scheme modifications in navigation
-- New elements added to sidebar
 ```
 
 ## Tips and Tricks
