@@ -41,6 +41,7 @@ def post_pr_comment(summary: str):
 
     logger.info(f"GITHUB_REPOSITORY: {repo}")
     logger.info(f"PR_NUMBER: {pr_number}")
+    logger.info(f"GITHUB_RUN_ID: {run_id}")
 
     if not all([github_token, repo, pr_number]):
         logger.warning("Missing GitHub context, skipping PR comment.")
@@ -70,7 +71,7 @@ def post_pr_comment(summary: str):
 
     # Look for a comment that starts with our header
     for comment in comments:
-        if comment["body"].startswith("# URL Comparison Analysis"):
+        if comment["body"].startswith("Information about visual testing analysis provided by [bruniai]"):
             existing_comment_id = comment["id"]
             break
 

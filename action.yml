@@ -20,9 +20,6 @@ secrets:
   OPENAI_API_KEY:
     description: "OpenAI API key for the agent"
     required: true
-  APP_PRIVATE_KEY:
-    description: "GitHub App private key"
-    required: true
 
 runs:
   using: "composite"
