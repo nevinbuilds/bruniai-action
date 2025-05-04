@@ -20,12 +20,18 @@ def get_installation_id():
     try:
         with open(event_path, 'r') as f:
             event = json.load(f)
+            # Log the event payload for debugging
+            logger.info("Event payload:")
+            logger.info(json.dumps(event, indent=2))
+
             # Try different possible locations for the installation ID
             installation_id = (
                 event.get("installation", {}).get("id") or
-                event.get("repository", {}).get("installation_id")
+                event.get("repository", {}).get("installation_id") or
+                event.get("pull_request", {}).get("head", {}).get("repo", {}).get("owner", {}).get("id")
             )
             if installation_id:
+                logger.info(f"Found installation ID: {installation_id}")
                 return str(installation_id)
             logger.error("Installation ID not found in event payload")
             return None
