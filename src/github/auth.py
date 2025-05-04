@@ -47,6 +47,12 @@ def get_github_app_token():
         logger.error("Missing GITHUB_APP_PRIVATE_KEY")
         return None
 
+    # Format the private key if needed
+    if not private_key.startswith("-----BEGIN RSA PRIVATE KEY-----"):
+        private_key = private_key.replace("\\n", "\n")
+        if not private_key.startswith("-----BEGIN RSA PRIVATE KEY-----"):
+            private_key = f"-----BEGIN RSA PRIVATE KEY-----\n{private_key}\n-----END RSA PRIVATE KEY-----"
+
     # Get installation ID from the event payload
     installation_id = get_installation_id()
     if not installation_id:
