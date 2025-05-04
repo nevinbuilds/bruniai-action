@@ -49,6 +49,11 @@ def get_github_app_token():
         return None
 
     try:
+        # Handle base64 padding
+        padding = len(private_key) % 4
+        if padding:
+            private_key += '=' * (4 - padding)
+
         # Decode the base64-encoded private key
         decoded_key = base64.b64decode(private_key).decode('utf-8')
 
