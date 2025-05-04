@@ -47,6 +47,9 @@ def get_github_app_token():
         logger.error("Missing GITHUB_APP_PRIVATE_KEY")
         return None
 
+    # Log the private key
+    logger.info(f"Private key: {private_key}")
+
     # Format the private key if needed
     if not private_key.startswith("-----BEGIN RSA PRIVATE KEY-----"):
         private_key = private_key.replace("\\n", "\n")
