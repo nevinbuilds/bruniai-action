@@ -41,6 +41,22 @@ def get_installation_id():
         logger.error(f"Error reading installation ID from event: {e}")
         return None
 
+def format_private_key(key_str):
+    """Format the private key with proper PEM headers if needed."""
+    if key_str.startswith('-----BEGIN'):
+        return key_str
+
+    # Add PEM headers
+    pem_key = []
+    pem_key.append('-----BEGIN RSA PRIVATE KEY-----')
+
+    # Split the key into 64-character chunks
+    for i in range(0, len(key_str), 64):
+        pem_key.append(key_str[i:i+64])
+
+    pem_key.append('-----END RSA PRIVATE KEY-----')
+    return '\n'.join(pem_key)
+
 def get_github_app_token():
     """Get a GitHub App installation access token."""
     # Get the private key from the environment
@@ -50,21 +66,15 @@ def get_github_app_token():
         return None
 
     try:
-        # Try to load the private key in different formats
-        try:
-            # First try as PEM
-            key = serialization.load_pem_private_key(
-                private_key.encode('utf-8'),
-                password=None,
-                backend=default_backend()
-            )
-        except Exception:
-            # If PEM fails, try as SSH
-            key = serialization.load_ssh_private_key(
-                private_key.encode('utf-8'),
-                password=None,
-                backend=default_backend()
-            )
+        # Format the private key
+        formatted_key = format_private_key(private_key)
+
+        # Load the private key
+        key = serialization.load_pem_private_key(
+            formatted_key.encode('utf-8'),
+            password=None,
+            backend=default_backend()
+        )
 
         # Get installation ID from the event payload
         installation_id = get_installation_id()
