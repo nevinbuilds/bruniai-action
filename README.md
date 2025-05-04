@@ -24,6 +24,22 @@ jobs:
           base-url: "https://www.example.com/"
           # Update to your preview URL format.
           pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+### Saving artifacts
+
+If you want to save artifacts in your github workflow add the following to the previous snippet :
+
+```
+- name: Upload images as artifacts
+  uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: visual-diff-images
+    path: images
+    retention-days: 1
 ```
 
 ## 📋 Requirements
@@ -35,7 +51,17 @@ jobs:
   - Read access to code, deployments, and metadata
   - Read and Write access to commit statuses and pull requests
 
-The token is automatically provided by GitHub Actions as `GITHUB_TOKEN` when running in a workflow.
+The Github token is automatically provided by the GitHub Action when installing the [bruniai](Bruniai) app in your repository.
+
+If you don't want to install the app you can provide the token as a env variable in your workflow similar to how you pass the openai key :
+
+```
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+This will ensure that the action can create comments in your PR, read the title and description from the PR and other related things that need access to the repository.
 
 ### 🔍 Preview URL format
 
