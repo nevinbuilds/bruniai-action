@@ -15,6 +15,13 @@ inputs:
     description: "Diff sensitivity (0-1, lower = stricter)"
     required: false
     default: "0.1"
+  bruni-token:
+    description: "Token for sending reports to Bruni API"
+    required: false
+  bruni-api-url:
+    description: "URL for the Bruni API endpoint"
+    required: false
+    default: "http://localhost:3000/api/reports"
 
 secrets:
   OPENAI_API_KEY:
@@ -64,7 +71,9 @@ runs:
       run: |
         python src/runner/__main__.py \
           --base-url "${{ inputs.base-url }}" \
-          --pr-url "${{ inputs.pr-url }}"
+          --pr-url "${{ inputs.pr-url }}" \
+          --bruni-token "${{ inputs.bruni-token }}" \
+          --bruni-api-url "${{ inputs.bruni-api-url }}"
       shell: bash
 
     - name: Stop MCP Server

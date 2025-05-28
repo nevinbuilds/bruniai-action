@@ -6,6 +6,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 
+__pycache__/
+
 # Images
 images/
 
@@ -15,3 +17,5 @@ venv310/
 .env
 
 .DS_Store
+
+src/bruniai.egg-info

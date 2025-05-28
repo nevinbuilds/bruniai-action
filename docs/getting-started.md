@@ -54,13 +54,13 @@ This guide will help you set up and start using the Visual Regression Testing to
 2. **Run the Visual Regression Tests**
 
    ```bash
-   python3 -m src.runner --base-url <production-url> --pr-url <pull-request-url>
+   python src/runner/__main__.py --base-url <production-url> --pr-url <pull-request-url>
    ```
 
    Example:
 
    ```bash
-   python3 -m src.runner --base-url https://www.brunivisual.com/ --pr-url https://bruni-website-git-actionexp-nevinbuilds.vercel.app
+   python src/runner/__main__.py --base-url https://www.brunivisual.com/ --pr-url https://bruni-website-git-changefoo-nevinbuilds.vercel.app/
    ```
 
 ## Understanding the Output

@@ -18,6 +18,9 @@ from analysis.sections import analyze_sections_side_by_side
 from core.mcp import managed_mcp_server
 from core.rate_limit import rate_limit
 from github.pr_metadata import fetch_pr_metadata
+from reporter.reporter import BruniReporter
+from reporter.report_generator import parse_analysis_results
+
 # ----------------- Setup -------------------
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -36,6 +39,8 @@ async def main():
     parser = argparse.ArgumentParser(description='Compare two URLs for visual differences')
     parser.add_argument('--base-url', required=True, help='Base URL to compare against')
     parser.add_argument('--pr-url', required=True, help='PR URL to compare')
+    parser.add_argument('--bruni-token', required=False, help='Token for Bruni API (overrides BRUNI_TOKEN from .env)')
+    parser.add_argument('--bruni-api-url', required=False, help='URL for Bruni API (overrides BRUNI_API_URL from .env)')
     args = parser.parse_args()
 
     logger.info(f"\n{'='*50}\nStarting URL comparison\nBase URL: {args.base_url}\nPreview URL: {args.pr_url}\n{'='*50}")
@@ -45,6 +50,20 @@ async def main():
 
     logger.info(f"PR Title: {pr_title}")
     logger.info(f"PR Description: {pr_description}")
+
+    # Initialize Bruni reporter if token is provided (either from .env or command line)
+    bruni_token = args.bruni_token or os.getenv("BRUNI_TOKEN")
+    bruni_api_url = args.bruni_api_url or os.getenv("BRUNI_API_URL", "http://localhost:3000/api/reports")
+
+    bruni_reporter = None
+    if bruni_token:
+        bruni_reporter = BruniReporter(
+            bruni_token,
+            bruni_api_url
+        )
+        logger.info("Bruni reporter initialized")
+    else:
+        logger.info("No Bruni token provided (neither in .env nor as argument), reporting will be skipped")
 
     # Ensure the images directory exists in the workspace
     images_dir = os.path.join(GITHUB_WORKSPACE, "images")
@@ -104,6 +123,20 @@ async def main():
             # Post to GitHub
             post_pr_comment(final_summary)
             logger.info("Complete analysis has been logged above.")
+
+            # Send report to Bruni API if configured
+            if bruni_reporter:
+                try:
+                    report_data = parse_analysis_results(
+                        args.base_url,
+                        args.pr_url,
+                        os.getenv("GITHUB_PR_NUMBER", "unknown"),
+                        sections_analysis,
+                        visual_analysis,
+                    )
+                    await bruni_reporter.send_report(report_data)
+                except Exception as e:
+                    logger.error(f"Failed to send report to Bruni API: {e}")
 
         except RateLimitError as e:
             logger.error("🚫 Rate limit or quota hit: %s", e)
