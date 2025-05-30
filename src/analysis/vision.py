@@ -46,7 +46,7 @@ async def analyze_images_with_vision(
 
         base64_base = encode_image(base_screenshot.replace('.png', '-resized.png'))
         base64_pr = encode_image(pr_screenshot.replace('.png', '-resized.png'))
-        base64_diff = encode_image(diff_image)
+        # base64_diff = encode_image(diff_image)
 
         # Create OpenAI client
         client = openai.OpenAI()
@@ -61,8 +61,8 @@ async def analyze_images_with_vision(
                     Critical checks (Must be performed first):
                     1. Section presence check:
                        - For each section described in the section analysis, **explicitly check if that section is visually present in the PR image**.
-                       - **Iterate through the list of sections one by one. For each, state whether it is present or missing in the PR image.**
-                       - A missing section is a CRITICAL issue and should be reported prominently.
+                       - **Iterate through the list of sections provided in the sections analysis one by one. For each, state whether it is present or missing in the PR image.**
+                       - A missing section is a CRITICAL issue and should be reported as a missing section.
                        - This check must be performed before any other analysis.
                        - If a section exists in the base image and section analysis but not in the PR image, this is a critical failure.
                        - Use the sections analysis to guide your decisions, the analysis will be delimited by <<<>>>.
@@ -74,6 +74,8 @@ async def analyze_images_with_vision(
                        - Verify if major UI components have been relocated
                        - These are considered significant issues
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
+                       - If a section in the middle of the page is missing, that will affect all sections below it but we should only flag the one missing section and continue
+                       with the analysis of the following sections independently.
 
                     3. Visual hierarchy check:
                        - Verify if the visual hierarchy of elements remains consistent
@@ -107,6 +109,7 @@ async def analyze_images_with_vision(
                                     "status": "Present" | "Missing",
                                     "description": "Description of the section and its expected location/content if missing"
                                 }
+                                ...
                             ],
                             "summary": "Summary of all critical issues found"
                         },
@@ -194,7 +197,7 @@ async def analyze_images_with_vision(
                 {
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/png;base64,{base64_diff}"
+                        "url": f"data:image/png;base64,{base64_pr}"
                     }
                 }
             ]
