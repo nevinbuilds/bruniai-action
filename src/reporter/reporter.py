@@ -28,6 +28,8 @@ class BruniReporter:
 
         logger.info(f"Sending report to Bruni API...")
 
+        logger.debug(f"Report JSON: {report}")
+
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(

@@ -104,6 +104,9 @@ async def main():
                 base_screenshot,
                 pr_screenshot,
                 diff_output_path,
+                args.base_url,
+                args.pr_url,
+                os.getenv("GITHUB_PR_NUMBER", "unknown"),
                 sections_analysis,
                 pr_title=pr_title,
                 pr_description=pr_description
