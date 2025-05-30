@@ -10,7 +10,15 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src", include=["*"]),
     include_package_data=True,
-    install_requires=read_requirements(),
+    install_requires=[
+        "openai",
+        "python-dotenv",
+        "playwright",
+        "pillow",
+        "numpy",
+        "aiohttp",
+        "typing_extensions>=4.0.0",
+    ],
     python_requires=">=3.10",
     author="Joao Garin",
     author_email="joao@nevinbuilds.com",
@@ -25,7 +33,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "bruniai=runner.__main__:main",
+            "bruniai=src.runner.__main__:run_main",
         ],
     },
 )
