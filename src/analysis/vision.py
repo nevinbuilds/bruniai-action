@@ -14,6 +14,7 @@ async def analyze_images_with_vision(
     base_url: str,
     preview_url: str,
     pr_number: str,
+    repository: str,
     sections_analysis: str = None,
     pr_title: str = None,
     pr_description: str = None,
@@ -98,6 +99,7 @@ async def analyze_images_with_vision(
                         "id": "auto-generated-uuid",
                         "url": "base_url_will_be_filled",
                         "preview_url": "preview_url_will_be_filled",
+                        "repository": "repository_will_be_filled",
                         "pr_number": "pr_number_will_be_filled",
                         "timestamp": "timestamp_will_be_filled",
                         "status": "pass" | "fail" | "warning" | "none",
@@ -221,6 +223,7 @@ async def analyze_images_with_vision(
             analysis_data["url"] = base_url
             analysis_data["preview_url"] = preview_url
             analysis_data["pr_number"] = pr_number
+            analysis_data["repository"] = repository
             analysis_data["timestamp"] = datetime.utcnow().isoformat()
             analysis_data["created_at"] = datetime.utcnow().isoformat()
             analysis_data["user_id"] = user_id

@@ -20,6 +20,7 @@ from core.rate_limit import rate_limit
 from github.pr_metadata import fetch_pr_metadata
 from reporter.reporter import BruniReporter
 from reporter.report_generator import parse_analysis_results
+from github.pr_comments import get_pr_number_from_event
 
 # ----------------- Setup -------------------
 load_dotenv()
@@ -47,13 +48,15 @@ async def main():
 
     # Get PR information from GitHub environment variables
     pr_title, pr_description = fetch_pr_metadata()
+    repo = os.getenv("GITHUB_REPOSITORY")  # e.g. 'org/repo'
+    pr_number = os.getenv("PR_NUMBER") or get_pr_number_from_event()
 
     logger.info(f"PR Title: {pr_title}")
     logger.info(f"PR Description: {pr_description}")
 
     # Initialize Bruni reporter if token is provided (either from .env or command line)
     bruni_token = args.bruni_token or os.getenv("BRUNI_TOKEN")
-    bruni_api_url = args.bruni_api_url or os.getenv("BRUNI_API_URL", "http://localhost:3000/api/reports")
+    bruni_api_url = args.bruni_api_url or os.getenv("BRUNI_API_URL", "https://bruniai-app.vercel.app/api/reports")
 
     bruni_reporter = None
     if bruni_token:
@@ -106,7 +109,8 @@ async def main():
                 diff_output_path,
                 args.base_url,
                 args.pr_url,
-                os.getenv("GITHUB_PR_NUMBER", "unknown"),
+                pr_number,
+                repo,
                 sections_analysis,
                 pr_title=pr_title,
                 pr_description=pr_description
@@ -133,8 +137,8 @@ async def main():
                     report_data = parse_analysis_results(
                         args.base_url,
                         args.pr_url,
-                        os.getenv("GITHUB_PR_NUMBER", "unknown"),
-                        os.getenv("GITHUB_REPOSITORY", "unknown"),
+                        pr_number,
+                        repo,
                         visual_analysis,
                     )
                     await bruni_reporter.send_report(report_data)
