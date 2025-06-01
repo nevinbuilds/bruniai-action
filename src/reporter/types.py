@@ -35,6 +35,7 @@ class ReportData(TypedDict):
     id: Optional[str]  # UUID
     url: str
     preview_url: str
+    repository: str
     pr_number: str
     timestamp: str
     status: str  # Keep for backward compatibility

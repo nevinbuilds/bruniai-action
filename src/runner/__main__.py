@@ -134,7 +134,7 @@ async def main():
                         args.base_url,
                         args.pr_url,
                         os.getenv("GITHUB_PR_NUMBER", "unknown"),
-                        sections_analysis,
+                        os.getenv("GITHUB_REPOSITORY", "unknown"),
                         visual_analysis,
                     )
                     await bruni_reporter.send_report(report_data)

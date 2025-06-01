@@ -13,7 +13,7 @@ def parse_analysis_results(
     base_url: str,
     preview_url: str,
     pr_number: str,
-    sections_analysis: str,
+    repository: str,
     visual_analysis: Dict[str, Any],  # Now expects structured data instead of string
 ) -> ReportData:
     """
@@ -24,6 +24,7 @@ def parse_analysis_results(
         "id": str(uuid.uuid4()),
         "url": base_url,
         "preview_url": preview_url,
+        "repository": repository,
         "pr_number": pr_number,
         "timestamp": datetime.utcnow().isoformat(),
         "status": "pending",
