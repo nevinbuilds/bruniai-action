@@ -223,6 +223,7 @@ async def analyze_images_with_vision(
             analysis_data["url"] = base_url
             analysis_data["preview_url"] = preview_url
             analysis_data["pr_number"] = pr_number
+            analysis_data["repository"] = repository
             analysis_data["timestamp"] = datetime.utcnow().isoformat()
             analysis_data["created_at"] = datetime.utcnow().isoformat()
             analysis_data["user_id"] = user_id
