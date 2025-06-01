@@ -21,7 +21,7 @@ inputs:
   bruni-api-url:
     description: "URL for the Bruni API endpoint"
     required: false
-    default: "http://localhost:3000/api/reports"
+    default: "https://bruniai-app.vercel.app/api/reports"
 
 secrets:
   OPENAI_API_KEY:
