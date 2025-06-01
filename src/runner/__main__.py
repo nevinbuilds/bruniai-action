@@ -53,7 +53,7 @@ async def main():
 
     # Initialize Bruni reporter if token is provided (either from .env or command line)
     bruni_token = args.bruni_token or os.getenv("BRUNI_TOKEN")
-    bruni_api_url = args.bruni_api_url or os.getenv("BRUNI_API_URL", "http://localhost:3000/api/reports")
+    bruni_api_url = args.bruni_api_url or os.getenv("BRUNI_API_URL", "https://bruniai-app.vercel.app/api/reports")
 
     bruni_reporter = None
     if bruni_token:
