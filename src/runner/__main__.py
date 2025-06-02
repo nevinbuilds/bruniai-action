@@ -11,7 +11,7 @@ from agents import Agent, Runner
 # Import from our modules
 from playwright_utils.screenshot import take_screenshot_with_playwright
 from playwright_utils.bounding_boxes import extract_section_bounding_boxes
-from github.pr_comments import post_pr_comment
+from github.pr_comments import post_pr_comment, format_visual_analysis_to_markdown
 from image_processing.diff import generate_diff_image
 from analysis.vision import analyze_images_with_vision
 from analysis.sections import analyze_sections_side_by_side
@@ -117,14 +117,14 @@ async def main():
             )
 
             # Combine both analyses
+            formatted_visual_analysis = format_visual_analysis_to_markdown(visual_analysis)
             final_summary = (
-                "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)"
+                "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)\n\n"
                 "<details>\n"
                 "<summary>Structural Analysis</summary>\n\n"
                 f"{sections_analysis}\n"
                 "</details>\n\n"
-                "## Visual Analysis\n"
-                f"{visual_analysis}"
+                f"{formatted_visual_analysis}"
             )
 
             # Post to GitHub
