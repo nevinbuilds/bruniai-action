@@ -127,11 +127,8 @@ async def main():
                 f"{formatted_visual_analysis}"
             )
 
-            # Post to GitHub
-            post_pr_comment(final_summary)
-            logger.info("Complete analysis has been logged above.")
-
-            # Send report to Bruni API if configured
+            # Send report to Bruni API if configured and get the report URL
+            report_url = None
             if bruni_reporter:
                 try:
                     report_data = parse_analysis_results(
@@ -141,9 +138,36 @@ async def main():
                         repo,
                         visual_analysis,
                     )
-                    await bruni_reporter.send_report(report_data)
+                    api_response = await bruni_reporter.send_report(report_data)
+
+                    # Extract report ID from API response and construct URL
+                    if api_response and "id" in api_response:
+                        report_id = api_response["id"]
+                        # Remove the /api/reports part and add /reports/{id}
+                        base_api_url = bruni_api_url.replace("/api/reports", "").rstrip("/")
+                        report_url = f"{base_api_url}/report/{report_id}"
+                        logger.info(f"Report available at: {report_url}")
+                    else:
+                        logger.warning(f"No report ID found in API response: {api_response}")
+                        logger.debug(f"Full API response: {api_response}")
+
                 except Exception as e:
                     logger.error(f"Failed to send report to Bruni API: {e}")
+
+            # Now format the visual analysis with the report URL if available
+            formatted_visual_analysis = format_visual_analysis_to_markdown(visual_analysis, report_url)
+            final_summary = (
+                "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)\n\n"
+                "<details>\n"
+                "<summary>Structural Analysis</summary>\n\n"
+                f"{sections_analysis}\n"
+                "</details>\n\n"
+                f"{formatted_visual_analysis}"
+            )
+
+            # Post to GitHub
+            post_pr_comment(final_summary)
+            logger.info("Complete analysis has been logged above.")
 
         except RateLimitError as e:
             logger.error("🚫 Rate limit or quota hit: %s", e)
