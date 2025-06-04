@@ -145,12 +145,6 @@ async def main():
                         report_id = api_response["id"]
                         # Remove the /api/reports part and add /reports/{id}
                         base_api_url = bruni_api_url.replace("/api/reports", "").rstrip("/")
-                        report_url = f"{base_api_url}/reports/{report_id}"
-                        logger.info(f"Report available at: {report_url}")
-                    elif api_response and "data" in api_response and "id" in api_response["data"]:
-                        # Handle case where response is wrapped in a data object
-                        report_id = api_response["data"]["id"]
-                        base_api_url = bruni_api_url.replace("/api/reports", "").rstrip("/")
                         report_url = f"{base_api_url}/report/{report_id}"
                         logger.info(f"Report available at: {report_url}")
                     else:
