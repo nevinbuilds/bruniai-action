@@ -151,7 +151,7 @@ async def main():
                         # Handle case where response is wrapped in a data object
                         report_id = api_response["data"]["id"]
                         base_api_url = bruni_api_url.replace("/api/reports", "").rstrip("/")
-                        report_url = f"{base_api_url}/reports/{report_id}"
+                        report_url = f"{base_api_url}/report/{report_id}"
                         logger.info(f"Report available at: {report_url}")
                     else:
                         logger.warning(f"No report ID found in API response: {api_response}")
