@@ -68,6 +68,14 @@ SAMPLE_OPENAI_RESPONSE = {
 
 @pytest.fixture
 def mock_openai():
+    """
+    Fixture that mocks the OpenAI API client.
+
+    This fixture:
+    - Mocks the OpenAI client to avoid making real API calls
+    - Returns a mock instance that simulates the API response
+    - Uses SAMPLE_OPENAI_RESPONSE as the default response
+    """
     with patch('openai.OpenAI') as mock:
         mock_instance = MagicMock()
         mock.return_value = mock_instance
@@ -78,13 +86,30 @@ def mock_openai():
 
 @pytest.fixture
 def mock_file_operations():
+    """
+    Fixture that mocks file operations for reading images.
+
+    This fixture:
+    - Mocks the built-in open() function
+    - Simulates reading image data without accessing real files
+    - Returns mock file handle with test image data
+    """
     with patch('builtins.open', MagicMock()) as mock_open:
         mock_open.return_value.__enter__.return_value.read.return_value = b"test image data"
         yield mock_open
 
 @pytest.mark.asyncio
 async def test_analyze_images_with_vision_success(mock_openai, mock_file_operations):
-    """Test successful image analysis with all parameters"""
+    """
+    Test the successful analysis of images with all parameters provided.
+
+    This test verifies:
+    - The function can process images with all optional parameters
+    - The response structure matches the expected format
+    - All enum values are correctly set
+    - Critical issues section is properly populated
+    - The function correctly handles PR context (title and description)
+    """
     result = await analyze_images_with_vision(
         base_screenshot=SAMPLE_BASE_SCREENSHOT,
         pr_screenshot=SAMPLE_PR_SCREENSHOT,
@@ -110,7 +135,15 @@ async def test_analyze_images_with_vision_success(mock_openai, mock_file_operati
 
 @pytest.mark.asyncio
 async def test_analyze_images_with_vision_minimal_params(mock_openai, mock_file_operations):
-    """Test image analysis with minimal required parameters"""
+    """
+    Test the image analysis with only required parameters.
+
+    This test verifies:
+    - The function works with minimal required parameters
+    - Optional parameters (sections_analysis, pr_title, pr_description) are handled correctly
+    - The response contains all required fields
+    - Metadata fields (url, preview_url, pr_number, repository) are correctly set
+    """
     result = await analyze_images_with_vision(
         base_screenshot=SAMPLE_BASE_SCREENSHOT,
         pr_screenshot=SAMPLE_PR_SCREENSHOT,
@@ -129,7 +162,15 @@ async def test_analyze_images_with_vision_minimal_params(mock_openai, mock_file_
 
 @pytest.mark.asyncio
 async def test_analyze_images_with_vision_invalid_json(mock_openai, mock_file_operations):
-    """Test handling of invalid JSON response from OpenAI"""
+    """
+    Test error handling for invalid JSON responses from OpenAI.
+
+    This test verifies:
+    - The function properly handles invalid JSON responses
+    - Appropriate error messages are raised
+    - The error contains information about JSON parsing failure
+    - The function fails gracefully when the API response is malformed
+    """
     mock_openai.chat.completions.create.return_value.choices = [
         MagicMock(message=MagicMock(content="invalid json"))
     ]
@@ -149,7 +190,19 @@ async def test_analyze_images_with_vision_invalid_json(mock_openai, mock_file_op
 
 @pytest.mark.asyncio
 async def test_analyze_images_with_vision_invalid_enum(mock_openai, mock_file_operations):
-    """Test handling of invalid enum values in response"""
+    """
+    Test handling of invalid enum values in the API response.
+
+    This test verifies:
+    - The function properly handles invalid enum values
+    - Invalid enum values are corrected to appropriate defaults
+    - The correction logic works for all enum fields:
+      - status_enum -> "warning"
+      - critical_issues_enum -> "other_issues"
+      - visual_changes_enum -> "minor"
+      - recommendation_enum -> "review_required"
+    - The function continues to work despite invalid enum values
+    """
     invalid_response = SAMPLE_OPENAI_RESPONSE.copy()
     invalid_response["status_enum"] = "invalid_status"
     invalid_response["critical_issues_enum"] = "invalid_issues"
