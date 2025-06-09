@@ -18,18 +18,18 @@ The tests cover:
 """
 
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock, MagicMock, mock_open
 import os
 from src.runner.__main__ import main
 from openai import RateLimitError
 
 @pytest.mark.asyncio
-async def test_main_with_required_args():
+async def test_main_with_required_args(tmp_path):
     # Mock environment variables
     with patch.dict(os.environ, {
         "GITHUB_REPOSITORY": "org/repo",
         "PR_NUMBER": "123",
-        "GITHUB_WORKSPACE": "/tmp"
+        "GITHUB_WORKSPACE": str(tmp_path)
     }):
         # Mock the argument parser
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
@@ -59,12 +59,12 @@ async def test_main_with_required_args():
                         mock_vision.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_main_with_failed_screenshots():
+async def test_main_with_failed_screenshots(tmp_path):
     # Mock environment variables
     with patch.dict(os.environ, {
         "GITHUB_REPOSITORY": "org/repo",
         "PR_NUMBER": "123",
-        "GITHUB_WORKSPACE": "/tmp"
+        "GITHUB_WORKSPACE": str(tmp_path)
     }):
         # Mock the argument parser
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
@@ -83,12 +83,12 @@ async def test_main_with_failed_screenshots():
                 # No need to verify further calls as they shouldn't happen
 
 @pytest.mark.asyncio
-async def test_main_with_bruni_reporter():
+async def test_main_with_bruni_reporter(tmp_path):
     # Mock environment variables
     with patch.dict(os.environ, {
         "GITHUB_REPOSITORY": "org/repo",
         "PR_NUMBER": "123",
-        "GITHUB_WORKSPACE": "/tmp",
+        "GITHUB_WORKSPACE": str(tmp_path),
         "BRUNI_TOKEN": "fake_token"
     }):
         # Mock the argument parser
@@ -121,12 +121,12 @@ async def test_main_with_bruni_reporter():
                         mock_reporter.return_value.send_report.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_main_with_rate_limit_error():
+async def test_main_with_rate_limit_error(tmp_path):
     # Mock environment variables
     with patch.dict(os.environ, {
         "GITHUB_REPOSITORY": "org/repo",
         "PR_NUMBER": "123",
-        "GITHUB_WORKSPACE": "/tmp"
+        "GITHUB_WORKSPACE": str(tmp_path)
     }):
         # Mock the argument parser
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
@@ -151,11 +151,11 @@ async def test_main_with_rate_limit_error():
                         # The function should handle the rate limit error gracefully
 
 @pytest.mark.asyncio
-async def test_main_with_missing_pr_number():
+async def test_main_with_missing_pr_number(tmp_path):
     # Mock environment variables without PR_NUMBER
     with patch.dict(os.environ, {
         "GITHUB_REPOSITORY": "org/repo",
-        "GITHUB_WORKSPACE": "/tmp"
+        "GITHUB_WORKSPACE": str(tmp_path)
     }):
         # Mock the argument parser
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
@@ -189,12 +189,12 @@ async def test_main_with_missing_pr_number():
                             assert mock_vision.call_args[0][5] == "456"
 
 @pytest.mark.asyncio
-async def test_main_with_bruni_reporter_error():
+async def test_main_with_bruni_reporter_error(tmp_path):
     # Mock environment variables
     with patch.dict(os.environ, {
         "GITHUB_REPOSITORY": "org/repo",
         "PR_NUMBER": "123",
-        "GITHUB_WORKSPACE": "/tmp",
+        "GITHUB_WORKSPACE": str(tmp_path),
         "BRUNI_TOKEN": "fake_token"
     }):
         # Mock the argument parser
