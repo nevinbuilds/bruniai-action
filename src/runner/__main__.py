@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import openai
 from openai import RateLimitError
 from agents import Agent, Runner
+import base64
 
 # Import from our modules
 from playwright_utils.screenshot import take_screenshot_with_playwright
@@ -131,13 +132,29 @@ async def main():
             report_url = None
             if bruni_reporter:
                 try:
+                    # Encode images to base64
+                    def encode_image(image_path: str) -> str:
+                        with open(image_path, "rb") as image_file:
+                            return base64.b64encode(image_file.read()).decode('utf-8')
+
+                    # Create image references with base64 data
+                    image_refs = {
+                        "base_screenshot": encode_image(base_screenshot),
+                        "pr_screenshot": encode_image(pr_screenshot),
+                        "diff_image": encode_image(diff_output_path)
+                    }
+
+                    # Create report with images
                     report_data = parse_analysis_results(
                         args.base_url,
                         args.pr_url,
                         pr_number,
                         repo,
                         visual_analysis,
+                        image_refs=image_refs
                     )
+
+                    # Send report with images
                     api_response = await bruni_reporter.send_report(report_data)
 
                     # Extract report ID from API response and construct URL
