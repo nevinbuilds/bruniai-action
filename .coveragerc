@@ -1,0 +1,17 @@
+[run]
+omit =
+    tests/*
+    .venv/*
+    */__init__.py
+    setup.py
+    */*.egg-info/*
+    */test_*.py
+    */conftest.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    @abstractmethod
+    @abc.abstractmethod
+    raise NotImplementedError
