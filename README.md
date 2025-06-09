@@ -134,3 +134,26 @@ If you're using custom domains, replace the platform-specific domain with your c
 ## 📄 License
 
 See [LICENSE](LICENSE) for details.
+
+## Testing
+
+See [tests/README.md](tests/README.md) for setup and usage.
+
+To run all tests:
+
+```bash
+pytest
+```
+
+To check coverage:
+
+```bash
+pytest --cov=src --cov-report=term-missing
+```
+
+To generate an HTML coverage report:
+
+```bash
+pytest --cov=src --cov-report=html
+open htmlcov/index.html
+```
