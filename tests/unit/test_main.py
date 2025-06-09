@@ -47,7 +47,9 @@ async def test_main_with_required_args(tmp_path):
                     mock_mcp.return_value.__aenter__.return_value = "mcp_server"
                     # Mock the analysis functions
                     with patch("src.runner.__main__.analyze_sections_side_by_side", new_callable=AsyncMock) as mock_sections, \
-                         patch("src.runner.__main__.analyze_images_with_vision", new_callable=AsyncMock) as mock_vision:
+                         patch("src.runner.__main__.analyze_images_with_vision", new_callable=AsyncMock) as mock_vision, \
+                         patch("builtins.open", mock_open(read_data="dummy image data")), \
+                         patch("json.dump") as mock_json_dump:
                         mock_sections.return_value = "sections analysis"
                         mock_vision.return_value = {"status": "pass"}
 
@@ -108,7 +110,9 @@ async def test_main_with_bruni_reporter(tmp_path):
                     # Mock the analysis functions
                     with patch("src.runner.__main__.analyze_sections_side_by_side", new_callable=AsyncMock) as mock_sections, \
                          patch("src.runner.__main__.analyze_images_with_vision", new_callable=AsyncMock) as mock_vision, \
-                         patch("src.runner.__main__.BruniReporter") as mock_reporter:
+                         patch("src.runner.__main__.BruniReporter") as mock_reporter, \
+                         patch("builtins.open", mock_open(read_data="dummy image data")), \
+                         patch("json.dump") as mock_json_dump:
                         mock_sections.return_value = "sections analysis"
                         mock_vision.return_value = {"status": "pass"}
                         mock_reporter.return_value.send_report = AsyncMock(return_value={"id": "123"})
@@ -143,7 +147,9 @@ async def test_main_with_rate_limit_error(tmp_path):
                 with patch("src.runner.__main__.managed_mcp_server") as mock_mcp:
                     mock_mcp.return_value.__aenter__.return_value = "mcp_server"
                     # Mock the analysis functions to raise a generic Exception
-                    with patch("src.runner.__main__.analyze_sections_side_by_side", new_callable=AsyncMock) as mock_sections:
+                    with patch("src.runner.__main__.analyze_sections_side_by_side", new_callable=AsyncMock) as mock_sections, \
+                         patch("builtins.open", mock_open(read_data="dummy image data")), \
+                         patch("json.dump") as mock_json_dump:
                         mock_sections.side_effect = Exception("Rate limit exceeded")
 
                         # Run the main function
@@ -175,7 +181,9 @@ async def test_main_with_missing_pr_number(tmp_path):
                         mock_mcp.return_value.__aenter__.return_value = "mcp_server"
                         # Mock the analysis functions
                         with patch("src.runner.__main__.analyze_sections_side_by_side", new_callable=AsyncMock) as mock_sections, \
-                             patch("src.runner.__main__.analyze_images_with_vision", new_callable=AsyncMock) as mock_vision:
+                             patch("src.runner.__main__.analyze_images_with_vision", new_callable=AsyncMock) as mock_vision, \
+                             patch("builtins.open", mock_open(read_data="dummy image data")), \
+                             patch("json.dump") as mock_json_dump:
                             mock_sections.return_value = "sections analysis"
                             mock_vision.return_value = {"status": "pass"}
 
@@ -214,7 +222,9 @@ async def test_main_with_bruni_reporter_error(tmp_path):
                     # Mock the analysis functions
                     with patch("src.runner.__main__.analyze_sections_side_by_side", new_callable=AsyncMock) as mock_sections, \
                          patch("src.runner.__main__.analyze_images_with_vision", new_callable=AsyncMock) as mock_vision, \
-                         patch("src.runner.__main__.BruniReporter") as mock_reporter:
+                         patch("src.runner.__main__.BruniReporter") as mock_reporter, \
+                         patch("builtins.open", mock_open(read_data="dummy image data")), \
+                         patch("json.dump") as mock_json_dump:
                         mock_sections.return_value = "sections analysis"
                         mock_vision.return_value = {"status": "pass"}
                         # Make the reporter raise an exception
