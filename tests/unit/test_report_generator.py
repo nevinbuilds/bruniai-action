@@ -1,12 +1,22 @@
+"""
+Test suite for report generation and analysis result parsing.
+
+This module tests the parse_analysis_results function, ensuring:
+1. Correct default and structured report generation
+2. Backward compatibility with string-based analysis results
+3. Proper handling of status enums and nested structures
+4. Graceful error handling for invalid or incomplete data
+5. Support for image references in reports
+
+The tests cover:
+- Default and structured report output
+- String-based and structured analysis input
+- Enum and field validation
+- Error and edge case handling
+- Image reference integration
+"""
+
 import pytest
-from datetime import datetime
-from reporter.types import (
-    ReportData,
-    ReportStatus,
-    CriticalIssuesStatus,
-    VisualChangesStatus,
-    RecommendationStatus
-)
 from reporter.report_generator import parse_analysis_results
 
 def test_parse_analysis_results_default_structure():

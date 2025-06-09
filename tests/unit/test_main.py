@@ -1,3 +1,22 @@
+"""
+Test suite for the main runner entrypoint and integration logic.
+
+This module tests the main() function and its integration with:
+1. Argument parsing and environment variable management
+2. Screenshot capture and error handling
+3. Section and visual analysis orchestration
+4. BruniReporter integration and error handling
+5. Rate limit and exception handling
+
+The tests cover:
+- Successful end-to-end runs with all required arguments
+- Early exits on failed screenshots
+- BruniReporter usage and error handling
+- Rate limit and generic error handling
+- PR number extraction from event data
+- Correct function call sequences and argument passing
+"""
+
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 import os

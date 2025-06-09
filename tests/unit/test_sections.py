@@ -1,3 +1,17 @@
+"""
+Test suite for section analysis retry logic.
+
+This module tests the analyze_sections_side_by_side function, ensuring:
+1. The function retries on timeout errors up to the maximum allowed attempts
+2. Proper error handling and retry delays are implemented
+3. The function raises an exception after all retries are exhausted
+
+The tests cover:
+- Retry logic for timeouts
+- Correct number of retries and sleep calls
+- Exception raising after max retries
+"""
+
 import pytest
 import asyncio
 from unittest.mock import patch, AsyncMock

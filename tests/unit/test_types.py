@@ -1,3 +1,17 @@
+"""
+Test suite for report data type definitions and validation.
+
+This module tests the TypedDict and Literal types used for reporting and analysis, ensuring:
+1. Only valid enum values are accepted for status fields
+2. Data structures (SectionInfo, CriticalIssues, etc.) have the correct required and optional fields
+3. The ReportData structure is robust to missing or incomplete data
+
+The tests cover:
+- Enum value validation for all status types
+- Structure and field presence for all report-related TypedDicts
+- Optional and required field handling
+"""
+
 import pytest
 from reporter.types import (
     ReportStatus,
