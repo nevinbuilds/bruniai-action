@@ -1,7 +1,7 @@
 import logging
 import aiohttp
 from typing import Optional, Dict, Any
-from .types import ReportData
+from .types import ReportData, ImageReferences
 
 logger = logging.getLogger(__name__)
 

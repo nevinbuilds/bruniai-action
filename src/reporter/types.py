@@ -31,6 +31,11 @@ class Conclusion(TypedDict):
     recommendation: str
     summary: str
 
+class ImageReferences(TypedDict):
+    base_screenshot: Optional[str]  # Base64 encoded image data
+    pr_screenshot: Optional[str]    # Base64 encoded image data
+    diff_image: Optional[str]       # Base64 encoded image data
+
 class ReportData(TypedDict):
     id: Optional[str]  # UUID
     url: str
@@ -49,3 +54,4 @@ class ReportData(TypedDict):
     recommendation_enum: Optional[RecommendationStatus]
     created_at: Optional[str]  # timestamp
     user_id: Optional[str]  # UUID
+    image_refs: Optional[ImageReferences]  # References to uploaded images

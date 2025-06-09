@@ -1,6 +1,6 @@
 from datetime import datetime
 import uuid
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from .types import (
     ReportData,
     ReportStatus,
@@ -15,9 +15,18 @@ def parse_analysis_results(
     pr_number: str,
     repository: str,
     visual_analysis: Dict[str, Any],  # Now expects structured data instead of string
+    image_refs: Optional[Dict[str, str]] = None  # Optional image references
 ) -> ReportData:
     """
     Parse the analysis results and generate a structured report.
+
+    Args:
+        base_url: Base URL being tested
+        preview_url: Preview URL for the PR
+        pr_number: PR number
+        repository: Repository name
+        visual_analysis: Analysis results
+        image_refs: Optional dict containing URLs to uploaded images
     """
     # Generate default report structure
     report: ReportData = {
@@ -53,6 +62,7 @@ def parse_analysis_results(
         },
         "recommendation_enum": "pass",
         "created_at": datetime.utcnow().isoformat(),
+        "image_refs": image_refs if image_refs else None
     }
 
     # Handle case where visual_analysis might still be a string (for backward compatibility)
