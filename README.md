@@ -1,5 +1,7 @@
 # 🎨 Visual Regression Testing with Playwright and OpenAI
 
+[![codecov](https://codecov.io/gh/nevinbuilds/bruniai/branch/main/graph/badge.svg)](https://codecov.io/gh/nevinbuilds/bruniai)
+
 This GitHub Action automates visual regression testing by comparing screenshots and highlighting differences between production and pull request versions. It's perfect for CI/CD pipelines, helping teams catch unintended visual changes in web applications, design systems, and UI-driven projects.
 
 ## 🚀 Quick Start
