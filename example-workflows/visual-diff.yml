@@ -19,12 +19,24 @@ jobs:
         with:
           node-version: 20
 
-      - name: Run AI Visual Diff Action
+      - name: Run AI Visual Diff Action (Single Page)
         uses: nevinbuilds/bruniai-action@v1
         with:
           base-url: "https://www.example.com/"
           pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
           threshold: 0.1
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Example of multi-page testing (simplified format)
+      - name: Run AI Visual Diff Action (Multi-Page)
+        uses: nevinbuilds/bruniai-action@v1
+        with:
+          base-url: "https://www.example.com/"
+          pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app/"
+          pages: |
+            ["/", "/about", "/contact"]
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

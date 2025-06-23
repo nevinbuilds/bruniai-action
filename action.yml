@@ -22,6 +22,9 @@ inputs:
     description: "URL for the Bruni API endpoint"
     required: false
     default: "https://bruniai-app.vercel.app/api/reports"
+  pages:
+    description: "JSON array of relative URLs for multi-page testing (e.g., [\"/about\", \"/contact\"]). Uses base-url and pr-url as base domains."
+    required: false
 
 secrets:
   OPENAI_API_KEY:
@@ -73,6 +76,7 @@ runs:
         python src/runner/__main__.py \
           --base-url "${{ inputs.base-url }}" \
           --pr-url "${{ inputs.pr-url }}" \
+          --pages "${{ inputs.pages }}" \
           --bruni-token "${{ inputs.bruni-token }}" \
           --bruni-api-url "${{ inputs.bruni-api-url }}"
       shell: bash
