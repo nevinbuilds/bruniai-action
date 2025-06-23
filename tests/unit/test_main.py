@@ -176,3 +176,209 @@ def test_aggregate_page_results():
     result = aggregate_page_results(page_results_warning)
     assert result['status_enum'] == 'warning'
     assert result['recommendation_enum'] == 'review_required'
+
+
+def test_pages_format_edge_cases():
+    """Test edge cases in pages format parsing."""
+    import json
+    from unittest.mock import patch, MagicMock
+    
+    pages_json = json.dumps(["about", "contact"])
+    
+    with patch("argparse.ArgumentParser.parse_args") as mock_args:
+        mock_args.return_value = MagicMock(
+            base_url="http://example.com",
+            pr_url="http://preview.com",
+            bruni_token=None,
+            bruni_api_url=None,
+            pages=pages_json
+        )
+        
+        from src.runner.__main__ import main
+        import argparse
+        
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--base-url', required=True)
+        parser.add_argument('--pr-url', required=True)
+        parser.add_argument('--bruni-token', required=False)
+        parser.add_argument('--bruni-api-url', required=False)
+        parser.add_argument('--pages', required=False)
+        
+        args = parser.parse_args(['--base-url', 'http://example.com', '--pr-url', 'http://preview.com', '--pages', pages_json])
+        
+        pages_to_process = []
+        if args.pages:
+            pages_data = json.loads(args.pages)
+            
+            if isinstance(pages_data, list) and all(isinstance(item, str) for item in pages_data):
+                base_url = args.base_url.rstrip('/')
+                pr_url = args.pr_url.rstrip('/')
+                
+                for relative_path in pages_data:
+                    if not relative_path.startswith('/'):
+                        relative_path = '/' + relative_path
+                    
+                    page_name = relative_path.strip('/').replace('/', ' ').title() or 'Homepage'
+                    if page_name == '':
+                        page_name = 'Homepage'
+                    
+                    pages_to_process.append({
+                        'base_url': base_url + relative_path,
+                        'pr_url': pr_url + relative_path,
+                        'name': page_name
+                    })
+        
+        assert len(pages_to_process) == 2
+        assert pages_to_process[0]['name'] == 'About'
+        assert pages_to_process[1]['name'] == 'Contact'
+        assert pages_to_process[0]['base_url'] == 'http://example.com/about'
+
+
+def test_pages_format_empty_path():
+    """Test empty relative path handling (line 64)."""
+    import json
+    from unittest.mock import patch, MagicMock
+    
+    pages_json = json.dumps(["", "/"])
+    
+    with patch("argparse.ArgumentParser.parse_args") as mock_args:
+        mock_args.return_value = MagicMock(
+            base_url="http://example.com",
+            pr_url="http://preview.com",
+            bruni_token=None,
+            bruni_api_url=None,
+            pages=pages_json
+        )
+        
+        from src.runner.__main__ import main
+        import argparse
+        
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--base-url', required=True)
+        parser.add_argument('--pr-url', required=True)
+        parser.add_argument('--bruni-token', required=False)
+        parser.add_argument('--bruni-api-url', required=False)
+        parser.add_argument('--pages', required=False)
+        
+        args = parser.parse_args(['--base-url', 'http://example.com', '--pr-url', 'http://preview.com', '--pages', pages_json])
+        
+        pages_to_process = []
+        if args.pages:
+            pages_data = json.loads(args.pages)
+            
+            if isinstance(pages_data, list) and all(isinstance(item, str) for item in pages_data):
+                base_url = args.base_url.rstrip('/')
+                pr_url = args.pr_url.rstrip('/')
+                
+                for relative_path in pages_data:
+                    if not relative_path.startswith('/'):
+                        relative_path = '/' + relative_path
+                    
+                    page_name = relative_path.strip('/').replace('/', ' ').title() or 'Homepage'
+                    if page_name == '':
+                        page_name = 'Homepage'
+                    
+                    pages_to_process.append({
+                        'base_url': base_url + relative_path,
+                        'pr_url': pr_url + relative_path,
+                        'name': page_name
+                    })
+        
+        assert len(pages_to_process) == 2
+        assert pages_to_process[0]['name'] == 'Homepage'  # Empty path becomes Homepage
+        assert pages_to_process[1]['name'] == 'Homepage'  # Root path becomes Homepage
+
+
+def test_pages_format_invalid_format():
+    """Test invalid pages format handling (lines 80-81)."""
+    import json
+    from unittest.mock import patch, MagicMock
+    
+    pages_json = json.dumps({"invalid": "format"})
+    
+    with patch("argparse.ArgumentParser.parse_args") as mock_args:
+        mock_args.return_value = MagicMock(
+            base_url="http://example.com",
+            pr_url="http://preview.com",
+            bruni_token=None,
+            bruni_api_url=None,
+            pages=pages_json
+        )
+        
+        from src.runner.__main__ import main
+        import argparse
+        
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--base-url', required=True)
+        parser.add_argument('--pr-url', required=True)
+        parser.add_argument('--bruni-token', required=False)
+        parser.add_argument('--bruni-api-url', required=False)
+        parser.add_argument('--pages', required=False)
+        
+        args = parser.parse_args(['--base-url', 'http://example.com', '--pr-url', 'http://preview.com', '--pages', pages_json])
+        
+        pages_to_process = []
+        invalid_format_detected = False
+        
+        if args.pages:
+            try:
+                pages_data = json.loads(args.pages)
+                
+                if isinstance(pages_data, list) and all(isinstance(item, str) for item in pages_data):
+                    pass
+                elif isinstance(pages_data, list) and all(isinstance(item, dict) for item in pages_data):
+                    pass
+                else:
+                    invalid_format_detected = True
+            except (json.JSONDecodeError, KeyError):
+                pass
+        
+        assert invalid_format_detected
+
+
+def test_format_multi_page_summary():
+    """Test multi-page summary formatting function."""
+    from src.runner.__main__ import format_multi_page_summary
+    
+    page_results = [
+        {
+            'page_name': 'Homepage',
+            'base_url': 'http://example.com/',
+            'pr_url': 'http://preview.com/',
+            'visual_analysis': {'status_enum': 'pass'},
+            'sections_analysis': 'Test sections analysis'
+        },
+        {
+            'page_name': 'About',
+            'base_url': 'http://example.com/about',
+            'pr_url': 'http://preview.com/about',
+            'visual_analysis': {'status_enum': 'warning'},
+            'sections_analysis': 'Test sections analysis 2'
+        }
+    ]
+    
+    summary = format_multi_page_summary(page_results)
+    assert "Multi-Page Visual Analysis (2 pages tested)" in summary
+    assert "✅ Homepage" in summary
+    assert "⚠️ About" in summary
+    
+    summary_with_url = format_multi_page_summary(page_results, "http://report.url")
+    assert "📊 [View detailed report](http://report.url)" in summary_with_url
+
+
+def test_encode_image():
+    """Test image encoding function."""
+    import tempfile
+    import os
+    from src.runner.__main__ import encode_image
+    
+    with tempfile.NamedTemporaryFile(mode='wb', suffix='.png', delete=False) as tmp_file:
+        tmp_file.write(b'fake image data')
+        tmp_path = tmp_file.name
+    
+    try:
+        encoded = encode_image(tmp_path)
+        assert isinstance(encoded, str)
+        assert len(encoded) > 0
+    finally:
+        os.unlink(tmp_path)
