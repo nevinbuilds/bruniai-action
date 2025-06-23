@@ -29,28 +29,14 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Example of multi-page testing
+      # Example of multi-page testing (simplified format)
       - name: Run AI Visual Diff Action (Multi-Page)
         uses: nevinbuilds/bruniai-action@v1
         with:
+          base-url: "https://www.example.com/"
+          pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app/"
           pages: |
-            [
-              {
-                "name": "Homepage",
-                "base_url": "https://www.example.com/",
-                "pr_url": "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app/"
-              },
-              {
-                "name": "About Page",
-                "base_url": "https://www.example.com/about",
-                "pr_url": "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app/about"
-              },
-              {
-                "name": "Contact Page", 
-                "base_url": "https://www.example.com/contact",
-                "pr_url": "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app/contact"
-              }
-            ]
+            ["/", "/about", "/contact"]
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

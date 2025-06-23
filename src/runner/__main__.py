@@ -43,19 +43,43 @@ async def main():
     parser.add_argument('--pr-url', required=True, help='PR URL to compare')
     parser.add_argument('--bruni-token', required=False, help='Token for Bruni API (overrides BRUNI_TOKEN from .env)')
     parser.add_argument('--bruni-api-url', required=False, help='URL for Bruni API (overrides BRUNI_API_URL from .env)')
-    parser.add_argument('--pages', required=False, help='JSON array of page objects for multi-page testing')
+    parser.add_argument('--pages', required=False, help='JSON array of relative URLs for multi-page testing (e.g., ["/about", "/contact"])')
     args = parser.parse_args()
 
     pages_to_process = []
     if args.pages:
         try:
             pages_data = json.loads(args.pages)
-            for page in pages_data:
-                pages_to_process.append({
-                    'base_url': page['base_url'],
-                    'pr_url': page['pr_url'],
-                    'name': page.get('name', f"Page {len(pages_to_process) + 1}")
-                })
+            
+            if isinstance(pages_data, list) and all(isinstance(item, str) for item in pages_data):
+                base_url = args.base_url.rstrip('/')
+                pr_url = args.pr_url.rstrip('/')
+                
+                for relative_path in pages_data:
+                    if not relative_path.startswith('/'):
+                        relative_path = '/' + relative_path
+                    
+                    page_name = relative_path.strip('/').replace('/', ' ').title() or 'Homepage'
+                    if page_name == '':
+                        page_name = 'Homepage'
+                    
+                    pages_to_process.append({
+                        'base_url': base_url + relative_path,
+                        'pr_url': pr_url + relative_path,
+                        'name': page_name
+                    })
+            
+            elif isinstance(pages_data, list) and all(isinstance(item, dict) for item in pages_data):
+                for page in pages_data:
+                    pages_to_process.append({
+                        'base_url': page['base_url'],
+                        'pr_url': page['pr_url'],
+                        'name': page.get('name', f"Page {len(pages_to_process) + 1}")
+                    })
+            else:
+                logger.error("Invalid pages format. Expected array of strings (relative URLs) or array of objects (legacy format)")
+                return
+                
         except (json.JSONDecodeError, KeyError) as e:
             logger.error(f"Invalid pages JSON format: {e}")
             return

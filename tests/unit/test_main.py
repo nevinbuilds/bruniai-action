@@ -57,19 +57,8 @@ async def test_main_smoke_test(tmp_path):
 
 @pytest.mark.asyncio
 async def test_main_multi_page_functionality(tmp_path):
-    """Test that multi-page mode works correctly with valid JSON."""
-    pages_json = json.dumps([
-        {
-            "name": "Homepage",
-            "base_url": "https://example.com/",
-            "pr_url": "https://preview.example.com/"
-        },
-        {
-            "name": "About Page",
-            "base_url": "https://example.com/about",
-            "pr_url": "https://preview.example.com/about"
-        }
-    ])
+    """Test that multi-page mode works correctly with simplified relative URL format."""
+    pages_json = json.dumps(["/", "/about", "/contact"])
     
     with patch.dict(os.environ, {
         "GITHUB_REPOSITORY": "org/repo",
@@ -119,6 +108,45 @@ async def test_main_invalid_pages_json(tmp_path):
                 with patch("src.runner.__main__.fetch_pr_metadata", return_value=("Test PR", "Test description")):
                     with patch("src.runner.__main__.get_pr_number_from_event", return_value="123"):
                         await main()
+
+
+@pytest.mark.asyncio
+async def test_main_legacy_pages_format(tmp_path):
+    """Test that legacy multi-page format still works for backward compatibility."""
+    pages_json = json.dumps([
+        {
+            "name": "Homepage",
+            "base_url": "https://example.com/",
+            "pr_url": "https://preview.example.com/"
+        },
+        {
+            "name": "About Page",
+            "base_url": "https://example.com/about",
+            "pr_url": "https://preview.example.com/about"
+        }
+    ])
+    
+    with patch.dict(os.environ, {
+        "GITHUB_REPOSITORY": "org/repo",
+        "PR_NUMBER": "123",
+        "GITHUB_WORKSPACE": str(tmp_path)
+    }):
+        with patch("argparse.ArgumentParser.parse_args") as mock_args:
+            mock_args.return_value = MagicMock(
+                base_url="http://example.com",
+                pr_url="http://preview.com",
+                bruni_token=None,
+                bruni_api_url=None,
+                pages=pages_json
+            )
+            
+            with patch("src.runner.__main__.take_screenshot_with_playwright", return_value=False):
+                with patch("src.runner.__main__.managed_mcp_server") as mock_mcp:
+                    mock_mcp.return_value.__aenter__.return_value = MagicMock()
+                    mock_mcp.return_value.__aexit__.return_value = None
+                    with patch("src.runner.__main__.fetch_pr_metadata", return_value=("Test PR", "Test description")):
+                        with patch("src.runner.__main__.get_pr_number_from_event", return_value="123"):
+                            await main()
 
 
 def test_aggregate_page_results():

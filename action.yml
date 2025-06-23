@@ -23,7 +23,7 @@ inputs:
     required: false
     default: "https://bruniai-app.vercel.app/api/reports"
   pages:
-    description: "JSON array of page objects with base_url and pr_url properties for multi-page testing"
+    description: "JSON array of relative URLs for multi-page testing (e.g., [\"/about\", \"/contact\"]). Uses base-url and pr-url as base domains."
     required: false
 
 secrets:
