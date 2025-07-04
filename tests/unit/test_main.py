@@ -45,10 +45,20 @@ async def test_main_smoke_test(tmp_path):
 
             # Mock the screenshot function to return False (early return case)
             with patch("src.runner.__main__.take_screenshot_with_playwright", return_value=False):
-                # Run the main function
-                await main()
-                # The function should return early due to failed screenshots
-                # No need to verify further calls as they shouldn't happen
+                # Mock all the heavy processing to avoid actual work
+                with patch("src.runner.__main__.extract_section_bounding_boxes"):
+                    with patch("src.runner.__main__.generate_diff_image"):
+                        with patch("src.runner.__main__.managed_mcp_server") as mock_mcp:
+                            mock_mcp.return_value.__aenter__ = AsyncMock()
+                            mock_mcp.return_value.__aexit__ = AsyncMock()
+
+                            with patch("src.runner.__main__.analyze_sections_side_by_side"):
+                                with patch("src.runner.__main__.analyze_images_with_vision"):
+                                    with patch("src.runner.__main__.post_pr_comment"):
+                                        # Run the main function
+                                        await main()
+                                        # The function should return early due to failed screenshots
+                                        # No need to verify further calls as they shouldn't happen
 
 @pytest.mark.asyncio
 async def test_main_with_pages_parameter(tmp_path):
