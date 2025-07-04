@@ -11,6 +11,9 @@ inputs:
   pr-url:
     description: "URL of the PR deployment"
     required: true
+  pages:
+    description: "JSON array of page paths to test (e.g., ['/', '/about', '/contact']). If not provided, only the homepage is tested."
+    required: false
   threshold:
     description: "Diff sensitivity (0-1, lower = stricter)"
     required: false
@@ -73,6 +76,7 @@ runs:
         python src/runner/__main__.py \
           --base-url "${{ inputs.base-url }}" \
           --pr-url "${{ inputs.pr-url }}" \
+          --pages "${{ inputs.pages }}" \
           --bruni-token "${{ inputs.bruni-token }}" \
           --bruni-api-url "${{ inputs.bruni-api-url }}"
       shell: bash

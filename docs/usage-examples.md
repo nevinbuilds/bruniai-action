@@ -12,6 +12,15 @@ python3 -m src.runner \
   --pr-url https://pr-example.com
 ```
 
+### Testing Multiple Pages
+
+```bash
+python3 -m src.runner \
+  --base-url https://www.example.com \
+  --pr-url https://pr-example.com \
+  --pages '["/", "/about", "/contact", "/pricing"]'
+```
+
 ## GitHub Actions Integration
 
 ### Basic Workflow
@@ -39,6 +48,30 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
+### Multi-Page Testing Workflow
+
+```yaml
+name: Visual Regression Test
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Visual Regression Test
+        uses: ./
+        with:
+          base-url: "https://www.example.com/"
+          pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
+          pages: '["/", "/about", "/contact", "/pricing"]'
+
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
 ## Common Use Cases
 
 ### 1. Component Testing
@@ -61,6 +94,58 @@ python3 -m src.runner \
   --pr-url https://pr-design.example.com
 ```
 
+### 3. E-commerce Site Testing
+
+Test critical pages for an e-commerce site:
+
+```yaml
+name: E-commerce Visual Test
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Visual Regression Test
+        uses: ./
+        with:
+          base-url: "https://shop.example.com/"
+          pr-url: "https://shop-git-${{ github.head_ref }}-myusername.vercel.app"
+          pages: '["/", "/products", "/cart", "/checkout", "/account"]'
+
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+### 4. Marketing Site Testing
+
+Test key marketing pages:
+
+```yaml
+name: Marketing Site Visual Test
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Visual Regression Test
+        uses: ./
+        with:
+          base-url: "https://marketing.example.com/"
+          pr-url: "https://marketing-git-${{ github.head_ref }}-myusername.vercel.app"
+          pages: '["/", "/features", "/pricing", "/contact", "/blog"]'
+
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
 ## Tips and Tricks
 
 1. **Selective Testing**
@@ -69,13 +154,22 @@ python3 -m src.runner \
    - Test components individually
    - Use specific URLs for targeted testing
 
-2. **Performance Optimization**
+2. **Multi-Page Testing**
+
+   - Start with the most important pages
+   - Test pages that are frequently updated
+   - Consider user journey flows
+   - Balance coverage with execution time
+
+3. **Performance Optimization**
 
    - Test during off-peak hours
    - Clean up old test results
+   - Limit the number of pages for faster feedback
 
-3. **Integration with CI/CD**
+4. **Integration with CI/CD**
    - Configure notifications
    - Handle test failures gracefully
+   - Use conditional testing based on file changes
 
 For more detailed information, refer to the [Configuration Guide](configuration.md).
