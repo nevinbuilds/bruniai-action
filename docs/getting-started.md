@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide will help you set up and start using the Visual Regression Testing tool locally using python.
+This guide will help you set up and start using the Visual Regression Testing tool locally using Python.
 
 ## Prerequisites
 
@@ -31,17 +31,35 @@ This guide will help you set up and start using the Visual Regression Testing to
    pip install -r requirements.txt
    ```
 
-4. **Install Playwright MCP**
+4. **Install the Package in Development Mode**
+
+   ```bash
+   pip install -e .
+   ```
+
+5. **Install Playwright MCP**
 
    ```bash
    npm install -g @playwright/mcp
    ```
 
-5. **Set Up Environment Variables**
+6. **Install Playwright Browsers**
+
+   ```bash
+   npx playwright install
+   ```
+
+7. **Set Up Environment Variables**
    Create a `.env` file in the root directory and add your OpenAI API key:
+
    ```
    OPENAI_API_KEY=your_api_key_here
    ```
+
+   **Optional (for advanced features):**
+
+   - `GITHUB_TOKEN` – for posting PR comments
+   - `BRUNI_TOKEN` and `BRUNI_API_URL` – for Bruni API integration
 
 ## Running the Visual Tests
 
@@ -53,14 +71,18 @@ This guide will help you set up and start using the Visual Regression Testing to
 
 2. **Run the Visual Regression Tests**
 
+   You can run the tests with either of the following commands:
+
    ```bash
+   python -m src.runner.__main__ --base-url <production-url> --pr-url <pull-request-url>
+   # or
    python src/runner/__main__.py --base-url <production-url> --pr-url <pull-request-url>
    ```
 
    Example:
 
    ```bash
-   python src/runner/__main__.py --base-url https://www.brunivisual.com/ --pr-url https://bruni-website-git-changefoo-nevinbuilds.vercel.app/
+   python -m src.runner.__main__ --base-url https://www.brunivisual.com/ --pr-url https://bruni-website-git-changefoo-nevinbuilds.vercel.app/
    ```
 
 ## Understanding the Output
