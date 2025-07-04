@@ -1,13 +1,16 @@
 import asyncio
 import os
+import sys
 import logging
 import argparse
 import json
 from dotenv import load_dotenv
 import openai
 from openai import RateLimitError
-from agents import Agent, Runner
 import base64
+
+# Add the src directory to the Python path so we can import our modules
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # Import from our modules
 from playwright_utils.screenshot import take_screenshot_with_playwright
@@ -22,6 +25,9 @@ from github.pr_metadata import fetch_pr_metadata
 from reporter.reporter import BruniReporter
 from reporter.report_generator import parse_analysis_results
 from github.pr_comments import get_pr_number_from_event
+
+# Import agents after setting up the path
+from agents import Agent, Runner
 
 # ----------------- Setup -------------------
 load_dotenv()
