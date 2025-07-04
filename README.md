@@ -30,6 +30,31 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
+### Multi-Page Testing
+
+To test multiple pages, add the `pages` parameter:
+
+```yaml
+name: Visual Regression Test
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Visual Regression Test
+        uses: nevinbuilds/bruniai-action@v1.11
+        with:
+          base-url: "https://www.example.com/"
+          pr-url: "https://example-git-${{ github.head_ref }}-myusername.vercel.app"
+          pages: '["/", "/about", "/contact", "/pricing"]'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
 ### Saving artifacts
 
 If you want to save artifacts in your github workflow add the following to the previous snippet :
