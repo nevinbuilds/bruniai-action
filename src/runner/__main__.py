@@ -47,7 +47,7 @@ async def main():
     parser = argparse.ArgumentParser(description='Compare two URLs for visual differences')
     parser.add_argument('--base-url', required=True, help='Base URL to compare against')
     parser.add_argument('--pr-url', required=True, help='PR URL to compare')
-    parser.add_argument('--pages', required=False, help='JSON array of page paths to test (e.g., ["/", "/about", "/contact"]). If not provided, only the homepage is tested.')
+    parser.add_argument('--pages', required=False, help='JSON array of page paths to test (e.g., ["/", "/about", "/contact"]) or comma-separated paths (e.g., "/,/about,/contact"). If not provided, only the homepage is tested.')
     parser.add_argument('--bruni-token', required=False, help='Token for Bruni API (overrides BRUNI_TOKEN from .env)')
     parser.add_argument('--bruni-api-url', required=False, help='URL for Bruni API (overrides BRUNI_API_URL from .env)')
     args = parser.parse_args()
@@ -56,13 +56,38 @@ async def main():
     pages = ['/']  # Default to homepage only
     if args.pages:
         try:
-            pages = json.loads(args.pages)
+            # Clean up the input string - remove any extra whitespace or quotes
+            pages_input = args.pages.strip()
+
+            # If the input looks like it might be wrapped in extra quotes, try to clean it
+            if pages_input.startswith('"') and pages_input.endswith('"'):
+                pages_input = pages_input[1:-1]
+
+            # Check if it looks like JSON (starts with [ and ends with ])
+            if pages_input.startswith('[') and pages_input.endswith(']'):
+                # Try to parse as JSON
+                pages = json.loads(pages_input)
+            else:
+                # Try to parse as comma-separated values
+                pages = [page.strip() for page in pages_input.split(',') if page.strip()]
+                if not pages:
+                    logger.error("No valid page paths found in comma-separated input")
+                    return
+
             if not isinstance(pages, list):
-                logger.error("Pages parameter must be a JSON array")
+                logger.error("Pages parameter must be a JSON array or comma-separated list")
+                logger.error(f"Received: {type(pages)} - {pages}")
                 return
+
             logger.info(f"Testing {len(pages)} pages: {pages}")
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in pages parameter: {e}")
+            logger.error(f"Raw input: '{args.pages}'")
+            logger.error("Expected format: '[\"/\", \"/about\", \"/contact\"]' or '/,/about,/contact'")
+            return
+        except Exception as e:
+            logger.error(f"Unexpected error parsing pages parameter: {e}")
+            logger.error(f"Raw input: '{args.pages}'")
             return
     else:
         logger.info("No pages specified, testing homepage only")
