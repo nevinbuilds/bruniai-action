@@ -78,14 +78,23 @@ def parse_multi_page_analysis_results(
             analysis_text = str(visual_analysis).lower()
             if "missing sections" in analysis_text or "critical" in analysis_text:
                 status = "fail"
-            elif "significant changes" in analysis_text or "review required" in analysis_text:
+            elif ("significant changes" in analysis_text and "no significant changes" not in analysis_text) or "review required" in analysis_text:
                 status = "warning"
             else:
                 status = "pass"
 
         # Parse the visual analysis to extract structured data
         # (Assume visual_analysis is already structured for multi-page)
-        parsed_report = visual_analysis
+        if isinstance(visual_analysis, dict):
+            parsed_report = visual_analysis
+        else:
+            # Create default structured data for string-based analysis
+            parsed_report = {
+                "critical_issues": {"sections": [], "summary": ""},
+                "structural_analysis": {"section_order": "", "layout": "", "broken_layouts": ""},
+                "visual_changes": {"diff_highlights": [], "animation_issues": "", "conclusion": ""},
+                "conclusion": {"critical_issues": "", "visual_changes": "", "recommendation": "", "summary": ""}
+            }
 
         # Create page report with guaranteed valid status
         page_report: PageReport = {
