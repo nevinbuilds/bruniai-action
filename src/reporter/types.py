@@ -36,27 +36,6 @@ class ImageReferences(TypedDict):
     pr_screenshot: Optional[str]    # Base64 encoded image data
     diff_image: Optional[str]       # Base64 encoded image data
 
-# Single-page API types (for backward compatibility)
-class ReportData(TypedDict):
-    url: str
-    preview_url: str
-    repository: str
-    pr_number: str
-    timestamp: str
-    id: Optional[str]
-    created_at: Optional[str]
-    user_id: Optional[str]
-    status: str
-    status_enum: str
-    critical_issues: CriticalIssues
-    critical_issues_enum: str
-    structural_analysis: StructuralAnalysis
-    visual_changes: VisualChanges
-    visual_changes_enum: str
-    conclusion: Conclusion
-    recommendation_enum: str
-    image_refs: Optional[ImageReferences]
-
 # Multi-page API types
 class TestData(TypedDict):
     pr_number: str
