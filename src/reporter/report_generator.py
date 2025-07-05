@@ -13,6 +13,7 @@ from .types import (
     StructuralAnalysis,
     VisualChanges,
     Conclusion,
+    ReportData,
 )
 
 def _parse_analysis_results_internal(
@@ -104,6 +105,77 @@ def _parse_analysis_results_internal(
             report["conclusion"]["summary"] = f"Error parsing visual analysis: {str(e)}"
             report["recommendation_enum"] = "review_required"
             report["critical_issues_enum"] = "other_issues"
+
+    return report
+
+def parse_analysis_results(
+    base_url: str,
+    preview_url: str,
+    pr_number: str,
+    repository: str,
+    visual_analysis: Dict[str, Any],
+    image_refs: Optional[Dict[str, str]] = None
+) -> ReportData:
+    """
+    Parse analysis results and generate a structured report.
+
+    This function is maintained for backward compatibility with existing tests.
+    For new code, use parse_multi_page_analysis_results instead.
+
+    Args:
+        base_url: Base URL of the page
+        preview_url: Preview URL of the page
+        pr_number: PR number
+        repository: Repository name
+        visual_analysis: Analysis results (can be string or dict)
+        image_refs: Optional image references
+
+    Returns:
+        ReportData with structured analysis results
+    """
+    # Parse the analysis results using the internal function
+    parsed_report = _parse_analysis_results_internal(
+        base_url, preview_url, pr_number, repository, visual_analysis, image_refs
+    )
+
+    # Determine status based on critical issues and visual changes
+    # If the input has a status_enum, use it; otherwise calculate based on issues
+    if parsed_report["critical_issues_enum"] == "other_issues":
+        status = "fail"
+    elif isinstance(visual_analysis, dict) and "status_enum" in visual_analysis:
+        status = visual_analysis["status_enum"]
+    else:
+        status = "none"
+        if parsed_report["critical_issues_enum"] != "none":
+            status = "fail"
+        elif parsed_report["visual_changes_enum"] == "significant":
+            status = "warning"
+        elif parsed_report["visual_changes_enum"] == "minor":
+            status = "pass"
+        else:
+            status = "none"
+
+    # Create the ReportData structure
+    report: ReportData = {
+        "url": base_url,
+        "preview_url": preview_url,
+        "repository": repository,
+        "pr_number": pr_number,
+        "timestamp": datetime.utcnow().isoformat(),
+        "id": str(uuid.uuid4()),
+        "created_at": None,
+        "user_id": None,
+        "status": status,
+        "status_enum": status,
+        "critical_issues": parsed_report["critical_issues"],
+        "critical_issues_enum": parsed_report["critical_issues_enum"],
+        "structural_analysis": parsed_report["structural_analysis"],
+        "visual_changes": parsed_report["visual_changes"],
+        "visual_changes_enum": parsed_report["visual_changes_enum"],
+        "conclusion": parsed_report["conclusion"],
+        "recommendation_enum": parsed_report["recommendation_enum"],
+        "image_refs": image_refs
+    }
 
     return report
 
