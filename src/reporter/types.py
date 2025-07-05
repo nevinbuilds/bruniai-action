@@ -1,7 +1,7 @@
 from typing import List, TypedDict, Literal, Optional
 from datetime import datetime
 
-ReportStatus = Literal['pass', 'fail', 'warning', 'none']
+ReportStatus = Literal['pass', 'fail', 'warning']
 CriticalIssuesStatus = Literal['none', 'missing_sections', 'other_issues']
 VisualChangesStatus = Literal['none', 'minor', 'significant']
 RecommendationStatus = Literal['pass', 'review_required', 'reject']
@@ -36,22 +36,23 @@ class ImageReferences(TypedDict):
     pr_screenshot: Optional[str]    # Base64 encoded image data
     diff_image: Optional[str]       # Base64 encoded image data
 
-class ReportData(TypedDict):
-    id: Optional[str]  # UUID
+# Multi-page API types
+class TestData(TypedDict):
+    pr_number: str
+    repository: str
+    timestamp: str
+
+class PageReport(TypedDict):
+    page_path: str
     url: str
     preview_url: str
-    repository: str
-    pr_number: str
-    timestamp: str
-    status: str  # Keep for backward compatibility
-    status_enum: Optional[ReportStatus]
+    status: ReportStatus  # Required and cannot be 'none'
     critical_issues: CriticalIssues
-    critical_issues_enum: Optional[CriticalIssuesStatus]
     structural_analysis: StructuralAnalysis
     visual_changes: VisualChanges
-    visual_changes_enum: Optional[VisualChangesStatus]
     conclusion: Conclusion
-    recommendation_enum: Optional[RecommendationStatus]
-    created_at: Optional[str]  # timestamp
-    user_id: Optional[str]  # UUID
-    image_refs: Optional[ImageReferences]  # References to uploaded images
+    image_refs: Optional[ImageReferences]
+
+class MultiPageReportData(TypedDict):
+    test_data: TestData
+    reports: List[PageReport]

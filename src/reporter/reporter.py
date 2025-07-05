@@ -1,7 +1,7 @@
 import logging
 import aiohttp
-from typing import Optional, Dict, Any
-from .types import ReportData, ImageReferences
+from typing import Optional, Dict, Any, List
+from .types import MultiPageReportData
 
 logger = logging.getLogger(__name__)
 
@@ -11,12 +11,12 @@ class BruniReporter:
         self.api_url = api_url
         logger.info(f"Bruni reporter initialized with endpoint: {api_url}")
 
-    async def send_report(self, report: ReportData) -> Optional[Dict[str, Any]]:
+    async def send_multi_page_report(self, multi_page_report: MultiPageReportData) -> Optional[Dict[str, Any]]:
         """
-        Send a report to the Bruni API using aiohttp.
+        Send a multi-page report to the Bruni API using aiohttp.
 
         Args:
-            report: The report data to send
+            multi_page_report: The multi-page report data to send
 
         Returns:
             The API response data if successful, None otherwise
@@ -26,18 +26,18 @@ class BruniReporter:
             ValueError: If the response status is not successful
         """
         if not self.token:
-            logger.info("No Bruni token provided, skipping report submission")
+            logger.info("No Bruni token provided, skipping multi-page report submission")
             return None
 
-        logger.info(f"Sending report to Bruni API...")
+        logger.info(f"Sending multi-page report to Bruni API with {len(multi_page_report['reports'])} pages...")
 
-        logger.debug(f"Report JSON: {report}")
+        logger.debug(f"Multi-page report JSON: {multi_page_report}")
 
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
                     self.api_url,
-                    json=report,
+                    json=multi_page_report,
                     headers={
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {self.token}"
@@ -47,7 +47,7 @@ class BruniReporter:
                         response_text = await response.text()
                         logger.error(f"API Error: {response.status} - {response_text}")
                         raise ValueError(
-                            f"Failed to send report: {response.status} - {response_text}"
+                            f"Failed to send multi-page report: {response.status} - {response_text}"
                         )
 
                     # Try to parse the response as JSON first
@@ -62,5 +62,5 @@ class BruniReporter:
                         return {"message": response_text}
 
             except aiohttp.ClientError as e:
-                logger.error(f"Error sending report to Bruni API: {e}")
+                logger.error(f"Error sending multi-page report to Bruni API: {e}")
                 raise

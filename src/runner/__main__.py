@@ -23,7 +23,7 @@ from core.mcp import managed_mcp_server
 from core.rate_limit import rate_limit
 from github.pr_metadata import fetch_pr_metadata
 from reporter.reporter import BruniReporter
-from reporter.report_generator import parse_analysis_results
+from reporter.report_generator import parse_multi_page_analysis_results
 from github.pr_comments import get_pr_number_from_event
 
 # Import agents after setting up the path
@@ -104,7 +104,7 @@ async def main():
 
     # Initialize Bruni reporter if token is provided (either from .env or command line)
     bruni_token = args.bruni_token or os.getenv("BRUNI_TOKEN")
-    bruni_api_url = args.bruni_api_url or os.getenv("BRUNI_API_URL", "https://bruniai-app.vercel.app/api/reports")
+    bruni_api_url = args.bruni_api_url or os.getenv("BRUNI_API_URL", "https://bruniai-app.vercel.app/api/tests")
 
     bruni_reporter = None
     if bruni_token:
@@ -203,85 +203,77 @@ async def main():
                 all_analyses.append(page_analysis)
 
             # Combine all analyses into a comprehensive report
-            if len(all_analyses) == 1:
-                # Single page - use the original format
-                page_analysis = all_analyses[0]
-                formatted_visual_analysis = format_visual_analysis_to_markdown(page_analysis['visual_analysis'])
-                final_summary = (
-                    "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)\n\n"
-                    "<details>\n"
-                    "<summary>Structural Analysis</summary>\n\n"
-                    f"{page_analysis['sections_analysis']}\n"
-                    "</details>\n\n"
-                    f"{formatted_visual_analysis}"
+            final_summary = (
+                "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)\n\n"
+                f"**Testing Summary**: {len(all_analyses)} pages analyzed\n\n"
+            )
+
+            for i, page_analysis in enumerate(all_analyses, 1):
+                page_path = page_analysis['page_path']
+                visual_analysis = page_analysis['visual_analysis']
+                sections_analysis = page_analysis['sections_analysis']
+
+                # Format the visual analysis for this page
+                formatted_visual_analysis = format_visual_analysis_to_markdown(visual_analysis)
+
+                # Add page-specific section
+                page_summary = (
+                    f"<details>\n"
+                    f"<summary>Page {i}: {page_path}</summary>\n\n"
+                    f"<details>\n"
+                    f"<summary>Structural Analysis</summary>\n\n"
+                    f"{sections_analysis}\n"
+                    f"</details>\n\n"
+                    f"{formatted_visual_analysis}\n"
+                    f"</details>\n\n"
                 )
-            else:
-                # Multiple pages - create a comprehensive report
-                final_summary = (
-                    "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)\n\n"
-                    f"**Testing Summary**: {len(all_analyses)} pages analyzed\n\n"
-                )
-
-                for i, page_analysis in enumerate(all_analyses, 1):
-                    page_path = page_analysis['page_path']
-                    visual_analysis = page_analysis['visual_analysis']
-                    sections_analysis = page_analysis['sections_analysis']
-
-                    # Format the visual analysis for this page
-                    formatted_visual_analysis = format_visual_analysis_to_markdown(visual_analysis)
-
-                    # Add page-specific section
-                    page_summary = (
-                        f"<details>\n"
-                        f"<summary>Page {i}: {page_path}</summary>\n\n"
-                        f"<details>\n"
-                        f"<summary>Structural Analysis</summary>\n\n"
-                        f"{sections_analysis}\n"
-                        f"</details>\n\n"
-                        f"{formatted_visual_analysis}\n"
-                        f"</details>\n\n"
-                    )
-                    final_summary += page_summary
+                final_summary += page_summary
 
             # Send report to Bruni API if configured and get the report URL
             report_url = None
-            if bruni_reporter and len(all_analyses) == 1:
-                # For single page, send report as before
+            if bruni_reporter:
                 try:
-                    page_analysis = all_analyses[0]
-                    page_result = all_results[0]
-
                     # Encode images to base64
                     def encode_image(image_path: str) -> str:
                         with open(image_path, "rb") as image_file:
                             return base64.b64encode(image_file.read()).decode('utf-8')
 
-                    # Create image references with base64 data
-                    image_refs = {
-                        "base_screenshot": encode_image(page_result['base_screenshot']),
-                        "pr_screenshot": encode_image(page_result['pr_screenshot']),
-                        "diff_image": encode_image(page_result['diff_output_path'])
-                    }
+                    # Prepare page results with image references
+                    page_results = []
+                    for i, (page_analysis, page_result) in enumerate(zip(all_analyses, all_results)):
+                        # Create image references with base64 data
+                        image_refs = {
+                            "base_screenshot": encode_image(page_result['base_screenshot']),
+                            "pr_screenshot": encode_image(page_result['pr_screenshot']),
+                            "diff_image": encode_image(page_result['diff_output_path'])
+                        }
 
-                    # Create report with images
-                    report_data = parse_analysis_results(
-                        page_result['base_url'],
-                        page_result['pr_url'],
+                        # Create page result with all necessary data
+                        page_results.append({
+                            'page_path': page_result['page_path'],
+                            'base_url': page_result['base_url'],
+                            'pr_url': page_result['pr_url'],
+                            'visual_analysis': page_analysis['visual_analysis'],
+                            'sections_analysis': page_analysis['sections_analysis'],
+                            'image_refs': image_refs
+                        })
+
+                    # Create multi-page report
+                    multi_page_report = parse_multi_page_analysis_results(
                         pr_number,
                         repo,
-                        page_analysis['visual_analysis'],
-                        image_refs=image_refs
+                        page_results
                     )
 
-                    # Send report with images
-                    api_response = await bruni_reporter.send_report(report_data)
+                    # Send multi-page report
+                    api_response = await bruni_reporter.send_multi_page_report(multi_page_report)
 
                     # Extract report ID from API response and construct URL
                     if api_response and "id" in api_response:
                         report_id = api_response["id"]
-                        # Remove the /api/reports part and add /reports/{id}
-                        base_api_url = bruni_api_url.replace("/api/reports", "").rstrip("/")
-                        report_url = f"{base_api_url}/report/{report_id}"
+                        # Remove the /api/tests part and add /test/{id}
+                        base_api_url = bruni_api_url.replace("/api/tests", "").rstrip("/")
+                        report_url = f"{base_api_url}/test/{report_id}"
                         logger.info(f"Report available at: {report_url}")
                     else:
                         logger.warning(f"No report ID found in API response: {api_response}")
@@ -289,22 +281,10 @@ async def main():
 
                 except Exception as e:
                     logger.error(f"Failed to send report to Bruni API: {e}")
-            elif bruni_reporter and len(all_analyses) > 1:
-                # For multiple pages, log that we're not sending to Bruni API yet
-                logger.info("Multi-page testing detected. Bruni API reporting for multiple pages not yet implemented.")
 
-            # Update the final summary with report URL if available (for single page)
-            if len(all_analyses) == 1 and report_url:
-                page_analysis = all_analyses[0]
-                formatted_visual_analysis = format_visual_analysis_to_markdown(page_analysis['visual_analysis'], report_url)
-                final_summary = (
-                    "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)\n\n"
-                    "<details>\n"
-                    "<summary>Structural Analysis</summary>\n\n"
-                    f"{page_analysis['sections_analysis']}\n"
-                    "</details>\n\n"
-                    f"{formatted_visual_analysis}"
-                )
+            # Add report URL to the summary if available
+            if report_url:
+                final_summary += f"\n\n📊 **Complete Report**: [View detailed analysis]({report_url})"
 
             # Post to GitHub
             post_pr_comment(final_summary)
