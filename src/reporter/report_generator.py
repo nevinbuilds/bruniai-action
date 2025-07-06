@@ -2,17 +2,9 @@ from datetime import datetime
 import uuid
 from typing import Dict, Any, Optional, List
 from .types import (
-    ReportStatus,
-    CriticalIssuesStatus,
-    VisualChangesStatus,
-    RecommendationStatus,
     MultiPageReportData,
     TestData,
     PageReport,
-    CriticalIssues,
-    StructuralAnalysis,
-    VisualChanges,
-    Conclusion,
 )
 
 def parse_multi_page_analysis_results(
