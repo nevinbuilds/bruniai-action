@@ -29,38 +29,68 @@ class BruniReporter:
             logger.info("No Bruni token provided, skipping multi-page report submission")
             return None
 
-        logger.info(f"Sending multi-page report to Bruni API with {len(multi_page_report['reports'])} pages...")
+        # Split the reports into smaller chunks if necessary
+        max_chunk_size = 1  # 1 report per chunk to avoid large payloads
+        reports = multi_page_report['reports']
+        chunks = [reports[i:i + max_chunk_size] for i in range(0, len(reports), max_chunk_size)]
 
-        logger.debug(f"Multi-page report JSON: {multi_page_report}")
+        all_responses = []
+        test_id = None  # Will be set after first chunk
 
         async with aiohttp.ClientSession() as session:
-            try:
-                async with session.post(
-                    self.api_url,
-                    json=multi_page_report,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {self.token}"
-                    }
-                ) as response:
-                    if not response.ok:
-                        response_text = await response.text()
-                        logger.error(f"API Error: {response.status} - {response_text}")
-                        raise ValueError(
-                            f"Failed to send multi-page report: {response.status} - {response_text}"
-                        )
+            for chunk_index, chunk in enumerate(chunks):
+                logger.info(f"Sending chunk {chunk_index + 1}/{len(chunks)} with {len(chunk)} pages to Bruni API...")
 
-                    # Try to parse the response as JSON first
-                    try:
-                        response_data = await response.json()
-                        logger.info(f"API Response ({response.status}): {response_data}")
-                        return response_data
-                    except:
-                        # If response is not JSON, fall back to text
-                        response_text = await response.text()
-                        logger.info(f"API Response ({response.status}): {response_text}")
-                        return {"message": response_text}
+                # Prepare payload
+                payload = {
+                    "reports": chunk,
+                    "test_data": multi_page_report['test_data'],
+                    "chunk_index": chunk_index,
+                    "total_chunks": len(chunks)
+                }
 
-            except aiohttp.ClientError as e:
-                logger.error(f"Error sending multi-page report to Bruni API: {e}")
-                raise
+                # Add test_id for subsequent chunks
+                if test_id is not None:
+                    payload["test_id"] = test_id
+
+                try:
+                    async with session.post(
+                        self.api_url,
+                        json=payload,
+                        headers={
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {self.token}"
+                        }
+                    ) as response:
+                        if not response.ok:
+                            response_text = await response.text()
+                            logger.error(f"API Error: {response.status} - {response_text}")
+                            raise ValueError(
+                                f"Failed to send multi-page report: {response.status} - {response_text}"
+                            )
+
+                        # Try to parse the response as JSON first
+                        try:
+                            response_data = await response.json()
+                            logger.info(f"API Response ({response.status}): {response_data}")
+                            all_responses.append(response_data)
+
+                            # Extract test_id from first chunk response
+                            if chunk_index == 0 and test_id is None:
+                                test_obj = response_data.get('test')
+                                if test_obj and isinstance(test_obj, dict):
+                                    test_id = test_obj.get('id')
+                                    if test_id:
+                                        logger.info(f"Extracted test_id: {test_id}")
+                        except:
+                            # If response is not JSON, fall back to text
+                            response_text = await response.text()
+                            logger.info(f"API Response ({response.status}): {response_text}")
+                            all_responses.append({"message": response_text})
+
+                except aiohttp.ClientError as e:
+                    logger.error(f"Error sending multi-page report to Bruni API: {e}")
+                    raise
+
+        return all_responses
+
