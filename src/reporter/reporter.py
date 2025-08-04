@@ -30,7 +30,7 @@ class BruniReporter:
             return None
 
         # Split the reports into smaller chunks if necessary
-        max_chunk_size = 1000000  # 1 MB, adjust as needed
+        max_chunk_size = 1  # 1 report per chunk to avoid large payloads
         reports = multi_page_report['reports']
         chunks = [reports[i:i + max_chunk_size] for i in range(0, len(reports), max_chunk_size)]
 
