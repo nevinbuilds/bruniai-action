@@ -77,9 +77,11 @@ class BruniReporter:
 
                             # Extract test_id from first chunk response
                             if chunk_index == 0 and test_id is None:
-                                test_id = response_data.get('test').get('id')
-                                if test_id:
-                                    logger.info(f"Extracted test_id: {test_id}")
+                                test_obj = response_data.get('test')
+                                if test_obj and isinstance(test_obj, dict):
+                                    test_id = test_obj.get('id')
+                                    if test_id:
+                                        logger.info(f"Extracted test_id: {test_id}")
                         except:
                             # If response is not JSON, fall back to text
                             response_text = await response.text()
