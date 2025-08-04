@@ -107,6 +107,79 @@ class MockResponseContext:
 
 
 @pytest.mark.asyncio
+async def test_send_multi_page_report_api_payload_format():
+    """Test that the API payload includes all required fields."""
+    reporter = BruniReporter("test-token", "https://api.bruni.com/reports")
+    report_data = create_multi_page_report_data(3)  # 3 reports = 3 chunks
+
+    mock_responses = []
+    for i in range(3):
+        mock_response = AsyncMock()
+        mock_response.ok = True
+        mock_response.status = 200
+        if i == 0:
+            # First response should include test.id
+            mock_response.json.return_value = {"status": "success", "chunk": i + 1, "test": {"id": "test-123"}}
+        else:
+            mock_response.json.return_value = {"status": "success", "chunk": i + 1}
+        mock_responses.append(mock_response)
+
+    # Create a mock session that captures the request payload
+    class MockSessionWithCapture:
+        def __init__(self, responses):
+            self.responses = responses
+            self.call_count = 0
+            self.captured_payloads = []
+
+        def __call__(self, *args, **kwargs):
+            return self
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+        def post(self, *args, **kwargs):
+            # Capture the payload
+            self.captured_payloads.append(kwargs.get('json', {}))
+
+            # Return mock response
+            response = self.responses[self.call_count % len(self.responses)]
+            self.call_count += 1
+            return MockResponseContext(response)
+
+    mock_session = MockSessionWithCapture(mock_responses)
+
+    with patch('aiohttp.ClientSession', mock_session):
+        result = await reporter.send_multi_page_report(report_data)
+
+    # Verify we got 3 responses
+    assert len(result) == 3
+
+    # Verify we captured 3 payloads
+    assert len(mock_session.captured_payloads) == 3
+
+    # Verify each payload has the correct format
+    for i, payload in enumerate(mock_session.captured_payloads):
+        assert "test_data" in payload
+        assert "reports" in payload
+        assert "chunk_index" in payload
+        assert "total_chunks" in payload
+
+        assert payload["chunk_index"] == i
+        assert payload["total_chunks"] == 3
+        assert len(payload["reports"]) == 1  # 1 report per chunk
+        assert payload["test_data"] == report_data["test_data"]
+
+        # First chunk should not have test_id, subsequent chunks should
+        if i == 0:
+            assert "test_id" not in payload
+        else:
+            assert "test_id" in payload
+
+
+@pytest.mark.asyncio
 async def test_send_multi_page_report_single_chunk():
     """Test sending a multi-page report that fits in a single chunk."""
     reporter = BruniReporter("test-token", "https://api.bruni.com/reports")
