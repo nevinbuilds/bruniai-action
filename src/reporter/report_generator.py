@@ -95,8 +95,11 @@ def parse_multi_page_analysis_results(
             "preview_url": pr_url,
             "status": status,  # Use our determined status instead of parsed one
             "critical_issues": parsed_report["critical_issues"],
+            "critical_issues_enum": visual_analysis.get("critical_issues_enum", "none"),
             "structural_analysis": parsed_report["structural_analysis"],
             "visual_changes": parsed_report["visual_changes"],
+            "visual_changes_enum": visual_analysis.get("visual_changes_enum", "none"),
+            "recommendation_enum": visual_analysis.get("recommendation_enum", "pass"),
             "conclusion": parsed_report["conclusion"],
             "image_refs": image_refs
         }
