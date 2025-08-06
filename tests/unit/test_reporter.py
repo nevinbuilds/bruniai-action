@@ -37,6 +37,7 @@ def create_sample_page_report(page_path: str = "/", status: str = "pass") -> Pag
             "sections": [],
             "summary": ""
         },
+        "critical_issues_enum": "none",
         "structural_analysis": {
             "section_order": "",
             "layout": "",
@@ -47,6 +48,8 @@ def create_sample_page_report(page_path: str = "/", status: str = "pass") -> Pag
             "animation_issues": "",
             "conclusion": ""
         },
+        "visual_changes_enum": "none",
+        "recommendation_enum": "pass",
         "conclusion": {
             "critical_issues": "",
             "visual_changes": "",

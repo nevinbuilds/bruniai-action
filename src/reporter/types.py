@@ -48,8 +48,11 @@ class PageReport(TypedDict):
     preview_url: str
     status: ReportStatus  # Required and cannot be 'none'
     critical_issues: CriticalIssues
+    critical_issues_enum: CriticalIssuesStatus
     structural_analysis: StructuralAnalysis
     visual_changes: VisualChanges
+    visual_changes_enum: VisualChangesStatus
+    recommendation_enum: RecommendationStatus
     conclusion: Conclusion
     image_refs: Optional[ImageReferences]
 
