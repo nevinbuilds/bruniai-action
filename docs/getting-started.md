@@ -11,59 +11,74 @@ This guide will help you set up and start using the Visual Regression Testing to
 
 ## Installation Steps
 
-1. **Clone the Repository**
+We highly recommend using the automated setup script for a smoother experience.
 
-   ```bash
-   git clone <repository-url>
-   cd <repository-name>
-   ```
+1.  **Run the Setup Script (Recommended)**
 
-2. **Set Up Python Virtual Environment**
+    ```bash
+    ./scripts/setup.sh
+    ```
 
-   ```bash
-   python3.10 -m venv venv310
-   source venv310/bin/activate  # On Windows, use: venv310\Scripts\activate
-   ```
+    This script will perform all the necessary installation steps, from setting up the Python virtual environment to installing Playwright browsers.
 
-3. **Install Python Dependencies**
+    After running the script, please proceed to step 8 (Set Up Environment Variables) if you haven't already.
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+2.  **Clone the Repository**
 
-4. **Install the Package in Development Mode**
+    ```bash
+    git clone <repository-url>
+    cd <repository-name>
+    ```
 
-   ```bash
-   pip install -e .
-   ```
+3.  **Set Up Python Virtual Environment**
 
-5. **Install Playwright MCP**
+    ```bash
+    python3 -m venv venv310
+    source venv310/bin/activate  # On Windows, use: venv310\Scripts\activate
+    # IMPORTANT: Ensure your virtual environment is activated before proceeding with the following steps.
+    ```
 
-   ```bash
-   npm install -g @playwright/mcp
-   ```
+4.  **Install Python Dependencies**
 
-6. **Install Playwright Browsers**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-   ```bash
-   npx playwright install
-   ```
+5.  **Install the Package in Development Mode**
 
-7. **Set Up Environment Variables**
-   Create a `.env` file in the root directory and add your OpenAI API key:
+    ```bash
+    pip install -e .
+    ```
 
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
+6.  **Install Playwright MCP**
 
-   **Optional (for advanced features):**
+    ```bash
+    npm install -g @playwright/mcp
+    ```
 
-   - `GITHUB_TOKEN` – for posting PR comments
-   - `BRUNI_TOKEN` and `BRUNI_API_URL` – for Bruni API integration
+7.  **Install Playwright Browsers**
+
+    ```bash
+    npx playwright install
+    ```
+
+8.  **Set Up Environment Variables**
+    Create a `.env` file in the root directory and add your OpenAI API key:
+
+    ```
+    OPENAI_API_KEY=your_api_key_here
+    ```
+
+    **Optional (for advanced features):**
+
+    - `GITHUB_TOKEN` – for posting PR comments
+    - `BRUNI_TOKEN` and `BRUNI_API_URL` – for Bruni API integration
 
 ## Running the Visual Tests
 
 1. **Start the MCP Server**
+
+   If you ran the `setup.sh` script, the MCP server should already be running in the background. If you need to start it manually or in a separate terminal tab, use the following command:
 
    ```bash
    npx @playwright/mcp@latest --port 8931
@@ -74,16 +89,10 @@ This guide will help you set up and start using the Visual Regression Testing to
    You can run the tests with either of the following commands:
 
    ```bash
-   python -m src.runner.__main__ --base-url <production-url> --pr-url <pull-request-url>
-   # or
-   python src/runner/__main__.py --base-url <production-url> --pr-url <pull-request-url>
+   GITHUB_TOKEN=<github-token> python src/runner/__main__.py --base-url <production-url> --pr-url <pull-request-url> --pages '<pages>'
    ```
 
-   Example:
-
-   ```bash
-   python -m src.runner.__main__ --base-url https://www.brunivisual.com/ --pr-url https://bruni-website-git-changefoo-nevinbuilds.vercel.app/
-   ```
+   The github token is needed to write to the bruni comment to the PR.
 
 ## Understanding the Output
 
@@ -99,3 +108,13 @@ The tool will:
 - Review the [Configuration Guide](configuration.md) to customize the testing behavior
 - Check out [Usage Examples](usage-examples.md) for more advanced scenarios
 - Learn about the [Architecture](architecture.md) to understand how the tool works
+
+## Post-Installation
+
+After the installation steps (either via script or manually) are complete, you must activate the virtual environment in your terminal before running any Python commands.
+
+```bash
+source venv310/bin/activate
+```
+
+Once activated, you can proceed with running the visual tests as described in the next section.
