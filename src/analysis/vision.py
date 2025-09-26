@@ -52,11 +52,14 @@ async def analyze_images_with_vision(
         # Create OpenAI client
         client = openai.OpenAI()
 
+        pr_title_formatted = pr_title if pr_title else "No title provided."
+        truncated_desc_formatted = pr_description[:200] + ("..." if len(pr_description) > 200 else "") if pr_description else "No description provided."
+
         # Prepare the messages for GPT-4 Vision
         messages = [
             {
                 "role": "system",
-                "content": """
+                "content": f"""
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
 
                     Critical checks (Must be performed first):
@@ -94,8 +97,8 @@ async def analyze_images_with_vision(
                     - If the section animates or moves
 
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
-                    - The PR Title is: "{pr_title}"
-                    - The PR Description is: "{truncated_desc}"
+                    - The PR Title is: "{pr_title_formatted}"
+                    - The PR Description is: "{truncated_desc_formatted}"
                     - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
                     - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), the diff calculation should be stricter. Minor discrepancies might be acceptable in such cases.
                     - If the PR mentions theme or color adjustments, evaluate visual changes within that context, understanding that such changes are intentional.
@@ -113,35 +116,35 @@ async def analyze_images_with_vision(
                         "timestamp": "timestamp_will_be_filled",
                         "status": "pass" | "fail" | "warning" | "none",
                         "status_enum": "pass" | "fail" | "warning" | "none",
-                        "critical_issues": {
+                        "critical_issues": {{
                             "sections": [
-                                {
+                                {{
                                     "name": "Section Name",
                                     "status": "Present" | "Missing",
                                     "description": "Description of the section and its expected location/content if missing"
-                                }
+                                }}
                                 ...
                             ],
                             "summary": "Summary of all critical issues found"
-                        },
+                        }},
                         "critical_issues_enum": "none" | "missing_sections" | "other_issues",
-                        "structural_analysis": {
+                        "structural_analysis": {{
                             "section_order": "Analysis of section ordering changes",
                             "layout": "Analysis of layout structure changes",
                             "broken_layouts": "Description of any broken layouts found"
-                        },
-                        "visual_changes": {
+                        }},
+                        "visual_changes": {{
                             "diff_highlights": ["List of specific visual differences found"],
                             "animation_issues": "Description of any animation-related findings",
                             "conclusion": "Overall conclusion about visual changes"
-                        },
+                        }},
                         "visual_changes_enum": "none" | "minor" | "significant",
-                        "conclusion": {
+                        "conclusion": {{
                             "critical_issues": "Summary of critical issues impact",
                             "visual_changes": "Summary of visual changes impact",
                             "recommendation": "pass" | "review_required" | "reject",
                             "summary": "Overall summary and reasoning for recommendation"
-                        },
+                        }},
                         "recommendation_enum": "pass" | "review_required" | "reject",
                         "created_at": "timestamp_will_be_filled",
                         "user_id": "user_id_will_be_filled"
@@ -166,14 +169,6 @@ async def analyze_images_with_vision(
                 """
             }
         ]
-
-    truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "") if pr_description else "No description provided."
-
-    system_prompt = messages[0]["content"].format(
-        pr_title=pr_title if pr_title else "No title provided.",
-        truncated_desc=truncated_desc
-    )
-    messages[0]["content"] = system_prompt
 
     if sections_analysis:
         messages.append({
