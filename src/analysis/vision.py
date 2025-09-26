@@ -52,14 +52,11 @@ async def analyze_images_with_vision(
         # Create OpenAI client
         client = openai.OpenAI()
 
-        pr_title_formatted = pr_title if pr_title else "No title provided."
-        truncated_desc_formatted = pr_description[:200] + ("..." if len(pr_description) > 200 else "") if pr_description else "No description provided."
-
         # Prepare the messages for GPT-4 Vision
         messages = [
             {
                 "role": "system",
-                "content": f"""
+                "content": """
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
 
                     Critical checks (Must be performed first):
@@ -97,17 +94,13 @@ async def analyze_images_with_vision(
                     - If the section animates or moves
 
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
-                    - The PR Title is: "{pr_title_formatted}"
-                    - The PR Description is: "{truncated_desc_formatted}"
                     - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
-                    - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), the diff calculation should be stricter. Minor discrepancies might be acceptable in such cases.
-                    - If the PR mentions theme or color adjustments, evaluate visual changes within that context, understanding that such changes are intentional.
-
-                    **CRITICAL: Always prioritize the user's explicit intention as conveyed in the PR title and description when assessing visual differences. If the PR states that no visual changes are expected, treat any detected visual changes with a higher degree of scrutiny, potentially flagging them as critical if they contradict the stated intention.**
+                    - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
+                    - User intention expressed via the PR title and description should be the most important metric for the visual analysis.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
-                    {{
+                    {
                         "id": "auto-generated-uuid",
                         "url": "base_url_will_be_filled",
                         "preview_url": "preview_url_will_be_filled",
@@ -116,39 +109,39 @@ async def analyze_images_with_vision(
                         "timestamp": "timestamp_will_be_filled",
                         "status": "pass" | "fail" | "warning" | "none",
                         "status_enum": "pass" | "fail" | "warning" | "none",
-                        "critical_issues": {{
+                        "critical_issues": {
                             "sections": [
-                                {{
+                                {
                                     "name": "Section Name",
                                     "status": "Present" | "Missing",
                                     "description": "Description of the section and its expected location/content if missing"
-                                }}
+                                }
                                 ...
                             ],
                             "summary": "Summary of all critical issues found"
-                        }},
+                        },
                         "critical_issues_enum": "none" | "missing_sections" | "other_issues",
-                        "structural_analysis": {{
+                        "structural_analysis": {
                             "section_order": "Analysis of section ordering changes",
                             "layout": "Analysis of layout structure changes",
                             "broken_layouts": "Description of any broken layouts found"
-                        }},
-                        "visual_changes": {{
+                        },
+                        "visual_changes": {
                             "diff_highlights": ["List of specific visual differences found"],
                             "animation_issues": "Description of any animation-related findings",
                             "conclusion": "Overall conclusion about visual changes"
-                        }},
+                        },
                         "visual_changes_enum": "none" | "minor" | "significant",
-                        "conclusion": {{
+                        "conclusion": {
                             "critical_issues": "Summary of critical issues impact",
                             "visual_changes": "Summary of visual changes impact",
                             "recommendation": "pass" | "review_required" | "reject",
                             "summary": "Overall summary and reasoning for recommendation"
-                        }},
+                        },
                         "recommendation_enum": "pass" | "review_required" | "reject",
                         "created_at": "timestamp_will_be_filled",
                         "user_id": "user_id_will_be_filled"
-                    }}
+                    }
 
                     **CRITICAL: You MUST use ONLY these exact enum values - do not create new ones:**
 
@@ -170,104 +163,119 @@ async def analyze_images_with_vision(
             }
         ]
 
-    if sections_analysis:
+        # Add PR context if available
+        if pr_title or pr_description:
+            pr_context = []
+            if pr_title:
+                pr_context.append(f"PR Title: {pr_title}")
+            if pr_description:
+                # Truncate description to 200 characters
+                truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "")
+                pr_context.append(f"PR Description: {truncated_desc}")
+
+            messages.append({
+                "role": "user",
+                "content": f"Here is the context about this PR:\n\n{' '.join(pr_context)}\n\nUse this information to better understand the expected changes in the screenshots."
+            })
+
+        if sections_analysis:
+            messages.append({
+                "role": "user",
+                "content": (
+                    f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis<<<:\n\n{sections_analysis}>>>.\n\n"
+                    "**For each section listed above, explicitly check if it is present in the PR screenshot. If any section is missing, list it by name and describe its expected location and content.**"
+                    "Focus the image diff analysis on the sections that are not animating."
+                )
+            })
+
         messages.append({
             "role": "user",
-            "content": (
-                f"Here is the structural analysis of the website's sections that you should use to guide your visual analysis<<<:\n\n{sections_analysis}>>>.\n\n"
-                "**For each section listed above, explicitly check if it is present in the PR screenshot. If any section is missing, list it by name and describe its expected location and content.**"
-                "Focus the image diff analysis on the sections that are not animating."
-            )
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Here are the images to analyze in the right order. Base Image, PR Image and Diff Image. Please respond with the JSON analysis following the exact structure specified in the system prompt."
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{base64_base}"
+                    }
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{base64_pr}"
+                    }
+                }
+            ]
         })
 
-    messages.append({
-        "role": "user",
-        "content": [
-            {
-                "type": "text",
-                "text": "Here are the images to analyze in the right order. Base Image, PR Image and Diff Image. Please respond with the JSON analysis following the exact structure specified in the system prompt."
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/png;base64,{base64_base}"
-                }
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/png;base64,{base64_pr}"
-                }
-            }
-        ]
-    })
+        response = client.chat.completions.create(
+            model="gpt-4.1",
+            messages=messages,
+            max_tokens=1500,
+            temperature=0.2  # Lower temperature for more consistent analysis
+        )
 
-    response = client.chat.completions.create(
-        model="gpt-4.1",
-        messages=messages,
-        max_tokens=1500,
-        temperature=0.2  # Lower temperature for more consistent analysis
-    )
+        analysis_text = response.choices[0].message.content
 
-    analysis_text = response.choices[0].message.content
+        # Parse the JSON response
+        try:
+            analysis_data = json.loads(analysis_text)
 
-    # Parse the JSON response
-    try:
-        analysis_data = json.loads(analysis_text)
+            # Fill in the actual metadata values
+            analysis_data["id"] = str(uuid.uuid4())
+            analysis_data["url"] = base_url
+            analysis_data["preview_url"] = preview_url
+            analysis_data["pr_number"] = pr_number
+            analysis_data["repository"] = repository
+            analysis_data["timestamp"] = datetime.utcnow().isoformat()
+            analysis_data["created_at"] = datetime.utcnow().isoformat()
+            analysis_data["user_id"] = user_id
 
-        # Fill in the actual metadata values
-        analysis_data["id"] = str(uuid.uuid4())
-        analysis_data["url"] = base_url
-        analysis_data["preview_url"] = preview_url
-        analysis_data["pr_number"] = pr_number
-        analysis_data["repository"] = repository
-        analysis_data["timestamp"] = datetime.utcnow().isoformat()
-        analysis_data["created_at"] = datetime.utcnow().isoformat()
-        analysis_data["user_id"] = user_id
+            # Ensure status field matches status_enum for backward compatibility
+            if "status_enum" in analysis_data:
+                analysis_data["status"] = analysis_data["status_enum"]
 
-        # Ensure status field matches status_enum for backward compatibility
-        if "status_enum" in analysis_data:
-            analysis_data["status"] = analysis_data["status_enum"]
+            # Validate enum values and provide fallbacks for invalid ones
+            valid_status_enum = ['pass', 'fail', 'warning', 'none']
+            valid_critical_issues_enum = ['none', 'missing_sections', 'other_issues']
+            valid_visual_changes_enum = ['none', 'minor', 'significant']
+            valid_recommendation_enum = ['pass', 'review_required', 'reject']
 
-        # Validate enum values and provide fallbacks for invalid ones
-        valid_status_enum = ['pass', 'fail', 'warning', 'none']
-        valid_critical_issues_enum = ['none', 'missing_sections', 'other_issues']
-        valid_visual_changes_enum = ['none', 'minor', 'significant']
-        valid_recommendation_enum = ['pass', 'review_required', 'reject']
+            # Validate and correct enum values
+            if analysis_data.get('status_enum') not in valid_status_enum:
+                logger.warning(f"Invalid status_enum: {analysis_data.get('status_enum')}, defaulting to 'warning'")
+                analysis_data['status_enum'] = 'warning'
+                analysis_data['status'] = 'warning'
 
-        # Validate and correct enum values
-        if analysis_data.get('status_enum') not in valid_status_enum:
-            logger.warning(f"Invalid status_enum: {analysis_data.get('status_enum')}, defaulting to 'warning'")
-            analysis_data['status_enum'] = 'warning'
-            analysis_data['status'] = 'warning'
+            if analysis_data.get('critical_issues_enum') not in valid_critical_issues_enum:
+                logger.warning(f"Invalid critical_issues_enum: {analysis_data.get('critical_issues_enum')}, defaulting to 'other_issues'")
+                analysis_data['critical_issues_enum'] = 'other_issues'
 
-        if analysis_data.get('critical_issues_enum') not in valid_critical_issues_enum:
-            logger.warning(f"Invalid critical_issues_enum: {analysis_data.get('critical_issues_enum')}, defaulting to 'other_issues'")
-            analysis_data['critical_issues_enum'] = 'other_issues'
+            if analysis_data.get('visual_changes_enum') not in valid_visual_changes_enum:
+                logger.warning(f"Invalid visual_changes_enum: {analysis_data.get('visual_changes_enum')}, defaulting to 'minor'")
+                analysis_data['visual_changes_enum'] = 'minor'
 
-        if analysis_data.get('visual_changes_enum') not in valid_visual_changes_enum:
-            logger.warning(f"Invalid visual_changes_enum: {analysis_data.get('visual_changes_enum')}, defaulting to 'minor'")
-            analysis_data['visual_changes_enum'] = 'minor'
+            if analysis_data.get('recommendation_enum') not in valid_recommendation_enum:
+                logger.warning(f"Invalid recommendation_enum: {analysis_data.get('recommendation_enum')}, defaulting to 'review_required'")
+                analysis_data['recommendation_enum'] = 'review_required'
 
-        if analysis_data.get('recommendation_enum') not in valid_recommendation_enum:
-            logger.warning(f"Invalid recommendation_enum: {analysis_data.get('recommendation_enum')}, defaulting to 'review_required'")
-            analysis_data['recommendation_enum'] = 'review_required'
+            # Validate section status values
+            critical_issues = analysis_data.get('critical_issues', {})
+            sections = critical_issues.get('sections', [])
+            for section in sections:
+                if section.get('status') not in ['Present', 'Missing']:
+                    logger.warning(f"Invalid section status: {section.get('status')}, defaulting to 'Present'")
+                    section['status'] = 'Present'
 
-        # Validate section status values
-        critical_issues = analysis_data.get('critical_issues', {})
-        sections = critical_issues.get('sections', [])
-        for section in sections:
-            if section.get('status') not in ['Present', 'Missing']:
-                logger.warning(f"Invalid section status: {section.get('status')}, defaulting to 'Present'")
-                section['status'] = 'Present'
+            logger.info(f"\n{'='*50}\n🎨 Visual Analysis Results (JSON):\n{json.dumps(analysis_data, indent=2)}\n{'='*50}")
+            return analysis_data
 
-        logger.info(f"\n{'='*50}\n🎨 Visual Analysis Results (JSON):\n{json.dumps(analysis_data, indent=2)}\n{'='*50}")
-        return analysis_data
-
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON response: {e}")
-        logger.error(f"Raw response: {analysis_text}")
-        raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response: {e}")
+            logger.error(f"Raw response: {analysis_text}")
+            raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
 
     except Exception as e:
         logger.error(f"Error during image analysis: {e}")
