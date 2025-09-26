@@ -52,6 +52,16 @@ async def analyze_images_with_vision(
         # Create OpenAI client
         client = openai.OpenAI()
 
+        # Add PR context if available
+        if pr_title or pr_description:
+            pr_context = []
+            if pr_title:
+                pr_context.append(f"PR Title: {pr_title}")
+            if pr_description:
+                # Truncate description to 200 characters
+                truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "")
+                pr_context.append(f"PR Description: {truncated_desc}")
+
         # Prepare the messages for GPT-4 Vision
         messages = [
             {
@@ -97,6 +107,8 @@ async def analyze_images_with_vision(
                     - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
                     - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
                     - User intention expressed via the PR title and description should be the most important metric for the visual analysis.
+                    - The PR Title is: "{pr_title}"
+                    - The PR Description is: "{truncated_desc}"
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
@@ -159,24 +171,10 @@ async def analyze_images_with_vision(
                     - Be specific in descriptions and highlight the reasoning behind your assessment
                     - Focus on structural integrity and missing sections as the most critical issues
                     - Note animations as non-critical but important context
+                    - Always prioritize the user's explicit intention as conveyed in the PR title and description when assessing visual differences. If the PR states that no visual changes are expected, treat any detected visual changes with a higher degree of scrutiny, potentially flagging them as critical if they contradict the stated intention.
                 """
             }
         ]
-
-        # Add PR context if available
-        if pr_title or pr_description:
-            pr_context = []
-            if pr_title:
-                pr_context.append(f"PR Title: {pr_title}")
-            if pr_description:
-                # Truncate description to 200 characters
-                truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "")
-                pr_context.append(f"PR Description: {truncated_desc}")
-
-            messages.append({
-                "role": "user",
-                "content": f"Here is the context about this PR:\n\n{' '.join(pr_context)}\n\nUse this information to better understand the expected changes in the screenshots."
-            })
 
         if sections_analysis:
             messages.append({
