@@ -96,7 +96,7 @@ async def analyze_images_with_vision(
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
                     - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
                     - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), take this into consideration when assessing visual differences to make the diff calculation stricter.
-                    - If the PR mentions theme or color adjustments, evaluate visual changes within that context, so if its mentions e.g. that nothing should change then nothing should change and thats imporant.
+                    - If the PR mentions theme or color adjustments, evaluate visual changes within that context, so if its mentions e.g. that nothing should change then nothing should change and thats important to make sure that nothing is indeed changing unintentionally.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
