@@ -93,6 +93,11 @@ async def analyze_images_with_vision(
                     - Minor styling changes that don't affect layout
                     - If the section animates or moves
 
+                    **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
+                    - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
+                    - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), take this into consideration when assessing visual differences to make the diff calculation stricter.
+                    - If the PR mentions theme or color adjustments, evaluate visual changes within that context, understanding that such changes are intentional.
+
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
                     {
