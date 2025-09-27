@@ -167,7 +167,7 @@ async def analyze_images_with_vision(
                     - status_enum: "fail" for critical issues, "warning" for significant changes needing review, "pass" for acceptable changes, "none" only for errors
                     - critical_issues_enum: "missing_sections" if ANY sections are missing, "other_issues" for structural problems, "none" if no critical issues
                     - visual_changes_enum: "significant" for major layout/visual changes, "minor" for small styling changes, "none" for no meaningful changes
-                    - recommendation_enum: "reject" for critical failures that break functionality, "review_required" for changes needing human review, "pass" for acceptable changes
+                    - recommendation_enum: "reject" for critical failures that break functionality, "review_required" for changes needing human review, "pass" for acceptable changes. if the PR's intention goes against the visual changes, then the recommendation should be "review_required" or "reject" depending on the severity of the changes.
                     - Be specific in descriptions and highlight the reasoning behind your assessment
                     - Focus on structural integrity and missing sections as the most critical issues
                     - Note animations as non-critical but important context
