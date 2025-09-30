@@ -89,12 +89,8 @@ async def analyze_images_with_vision(
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
 
                     4. Visual diff analysis:
-                       - Analyze the diff image to identify visual differences
-                       - Identify if the visual differences are significant
-                       - Identify if the visual differences are minor
-                       - Identify if the visual differences are critical
+                       - Analyze the provided images to identify visual differences
                        - Make sure to take in consideration the PR title and description to guide your analysis, the analysis will be delimited by <<<>>>.
-                       - Use the sections analysis to guide your analysis, the pr_title and pr_description will be delimited by !!!.
                        - If the visual differences are significant, that will affect all sections below it but we should only flag the one missing section and continue
 
                     Non-critical changes (Should be noted but not flagged as issues):
@@ -111,10 +107,11 @@ async def analyze_images_with_vision(
                     - Most styling changes if significant
                     - Most layout changes if significant
                     - Anything that goes against the PR title and description implicit requirements
+                    - Whenever detecting that a human review is required, you should set the recommendation to "review_required" or "reject" depending on the severity of the changes. Never "pass".
 
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
                     - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
-                    - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
+                    - Pay close attention to the PR title and description for explicit or implicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
                     - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
                     - User intention expressed via the PR title and description should be the most important metric for the visual analysis.
 
