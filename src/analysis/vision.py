@@ -68,6 +68,7 @@ async def analyze_images_with_vision(
                 "role": "system",
                 "content": """
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
+                    Always make sure you are using the PR title and description to guide your analysis and identify if a certain change is expected or not.
 
                     Critical checks (Must be performed first):
                     1. Section presence check:
@@ -112,12 +113,16 @@ async def analyze_images_with_vision(
                     - Minor styling changes that don't affect layout
                     - If the section animates or moves
 
+                    Changes that require human review:
+                    - Most color changes if significant (change of color)
+                    - Most styling changes if significant
+                    - Most layout changes if significant
+                    - Anything that goes against the PR title and description implicit requirements
+
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
                     - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
                     - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
                     - User intention expressed via the PR title and description should be the most important metric for the visual analysis.
-                    - The PR Title is: "{pr_title}"
-                    - The PR Description is: "{truncated_desc}"
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
