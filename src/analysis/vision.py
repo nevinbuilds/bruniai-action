@@ -52,21 +52,14 @@ async def analyze_images_with_vision(
         # Create OpenAI client
         client = openai.OpenAI()
 
-        # Add PR context if available
-        if pr_title or pr_description:
-            pr_context = []
-            if pr_title:
-                pr_context.append(f"PR Title: !!!{pr_title}!!!")
-            if pr_description:
-                # Truncate description to 200 characters
-                truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "")
-                pr_context.append(f"PR Description: !!!{truncated_desc}!!!")
+        pr_title_formatted = pr_title if pr_title else "No title provided."
+        truncated_desc_formatted = pr_description[:200] + ("..." if len(pr_description) > 200 else "") if pr_description else "No description provided."
 
         # Prepare the messages for GPT-4 Vision
         messages = [
             {
                 "role": "system",
-                "content": """
+                "content": f"""
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
                     Always make sure you are using the PR title and description to guide your analysis and identify if a certain change is expected or not.
 
@@ -120,13 +113,14 @@ async def analyze_images_with_vision(
                     - Anything that goes against the PR title and description implicit requirements
 
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
+                    - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
                     - Pay close attention to the PR title and description for explicit mentions of theme, color adjustments, or statements indicating "nothing changes visually".
                     - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
                     - User intention expressed via the PR title and description should be the most important metric for the visual analysis.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
-                    {
+                    {{
                         "id": "auto-generated-uuid",
                         "url": "base_url_will_be_filled",
                         "preview_url": "preview_url_will_be_filled",
@@ -135,39 +129,39 @@ async def analyze_images_with_vision(
                         "timestamp": "timestamp_will_be_filled",
                         "status": "pass" | "fail" | "warning" | "none",
                         "status_enum": "pass" | "fail" | "warning" | "none",
-                        "critical_issues": {
+                        "critical_issues": {{
                             "sections": [
-                                {
+                                {{
                                     "name": "Section Name",
                                     "status": "Present" | "Missing",
                                     "description": "Description of the section and its expected location/content if missing"
-                                }
+                                }}
                                 ...
                             ],
                             "summary": "Summary of all critical issues found"
-                        },
+                        }},
                         "critical_issues_enum": "none" | "missing_sections" | "other_issues",
-                        "structural_analysis": {
+                        "structural_analysis": {{
                             "section_order": "Analysis of section ordering changes",
                             "layout": "Analysis of layout structure changes",
                             "broken_layouts": "Description of any broken layouts found"
-                        },
-                        "visual_changes": {
+                        }},
+                        "visual_changes": {{
                             "diff_highlights": ["List of specific visual differences found"],
                             "animation_issues": "Description of any animation-related findings",
                             "conclusion": "Overall conclusion about visual changes"
-                        },
+                        }},
                         "visual_changes_enum": "none" | "minor" | "significant",
-                        "conclusion": {
+                        "conclusion": {{
                             "critical_issues": "Summary of critical issues impact",
                             "visual_changes": "Summary of visual changes impact",
                             "recommendation": "pass" | "review_required" | "reject",
                             "summary": "Overall summary and reasoning for recommendation"
-                        },
+                        }},
                         "recommendation_enum": "pass" | "review_required" | "reject",
                         "created_at": "timestamp_will_be_filled",
                         "user_id": "user_id_will_be_filled"
-                    }
+                    }}
 
                     **CRITICAL: You MUST use ONLY these exact enum values - do not create new ones:**
 
