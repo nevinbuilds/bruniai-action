@@ -56,11 +56,11 @@ async def analyze_images_with_vision(
         if pr_title or pr_description:
             pr_context = []
             if pr_title:
-                pr_context.append(f"PR Title: {pr_title}")
+                pr_context.append(f"PR Title: !!!{pr_title}!!!")
             if pr_description:
                 # Truncate description to 200 characters
                 truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "")
-                pr_context.append(f"PR Description: {truncated_desc}")
+                pr_context.append(f"PR Description: !!!{truncated_desc}!!!")
 
         # Prepare the messages for GPT-4 Vision
         messages = [
@@ -93,6 +93,15 @@ async def analyze_images_with_vision(
                        - Check if important UI elements maintain their relative positioning
                        - Ensure navigation elements remain accessible
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
+
+                    4. Visual diff analysis:
+                       - Analyze the diff image to identify visual differences
+                       - Identify if the visual differences are significant
+                       - Identify if the visual differences are minor
+                       - Identify if the visual differences are critical
+                       - Make sure to take in consideration the PR title and description to guide your analysis, the analysis will be delimited by <<<>>>.
+                       - Use the sections analysis to guide your analysis, the pr_title and pr_description will be delimited by !!!.
+                       - If the visual differences are significant, that will affect all sections below it but we should only flag the one missing section and continue
 
                     Non-critical changes (Should be noted but not flagged as issues):
                     - Text content changes
