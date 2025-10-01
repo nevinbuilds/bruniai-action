@@ -91,6 +91,13 @@ async def analyze_images_with_vision(
                        - Ensure navigation elements remain accessible
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
 
+                    4. Extract the relative URL for the current page being tested.
+                       - The relative URL is the URL of the current page being tested. Remove the base URL from the preview_url.
+                       - The resulting relative URL should be used to determine if the PR title and description refer to the current page being tested.
+                       - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
+                        - If its clear to what page the PR title and description are referring to and they refer to the current page being tested (preview_url), then use it as user intent. Otherwise don't take them in consideration.
+                        - In the case its very clear that they refer to this page (relative url), then pay close attention to the PR title and description for mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
+
                     Non-critical changes (Should be noted but not flagged as issues):
                     - Text content changes
                     - Menu item text updates
@@ -99,11 +106,7 @@ async def analyze_images_with_vision(
                     - Price changes
                     - Minor styling changes that don't affect layout
                     - If the section animates or moves
-
-                    **PR CONTEXT:**
-                    - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
-                    - If its clear to what page the PR title and description are referring to and they refer to the current page being tested (preview_url), then use it as user intent. Otherwise don't take them in consideration.
-                    - In the case its very clear that they refer to this page (preview_url), then pay close attention to the PR title and description for mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
+                    - If the PR title and description refer to a page that is not the current page being tested, then don't take them in consideration.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
