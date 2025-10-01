@@ -7,6 +7,10 @@ from datetime import datetime
 
 logger = logging.getLogger("agent-runner")
 
+def escape_curly_braces(text: str) -> str:
+    """Escapes curly braces in a string to prevent f-string injection."""
+    return text.replace("{", "{{").replace("}", "}}")
+
 async def analyze_images_with_vision(
     base_screenshot: str,
     pr_screenshot: str,
@@ -52,8 +56,8 @@ async def analyze_images_with_vision(
         # Create OpenAI client
         client = openai.OpenAI()
 
-        pr_title_formatted = pr_title if pr_title else "No title provided."
-        truncated_desc_formatted = pr_description[:200] + ("..." if len(pr_description) > 200 else "") if pr_description else "No description provided."
+        pr_title_formatted = escape_curly_braces(pr_title if pr_title else "No title provided.")
+        truncated_desc_formatted = escape_curly_braces(pr_description[:200] + ("..." if len(pr_description) > 200 else "") if pr_description else "No description provided.")
 
         # Prepare the messages for GPT-4 Vision
         messages = [
