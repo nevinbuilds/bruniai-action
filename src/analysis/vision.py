@@ -89,11 +89,6 @@ async def analyze_images_with_vision(
                        - Ensure navigation elements remain accessible
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
 
-                    4. Visual diff analysis:
-                       - Analyze the provided images to identify visual differences
-                       - Make sure to take in consideration the PR title and description to guide your analysis (on the right page), the analysis will be delimited by <<<>>>.
-                       - If the visual differences are significant, that will affect all sections below it but we should only flag the one missing section and continue
-
                     Non-critical changes (Should be noted but not flagged as issues):
                     - Text content changes
                     - Menu item text updates
@@ -104,17 +99,14 @@ async def analyze_images_with_vision(
                     - If the section animates or moves
 
                     Changes that require human review:
-                    - Most color changes if significant (change of color)
-                    - Most styling changes if significant
-                    - Most layout changes if significant
                     - Anything that goes against the PR title and description implicit requirements for the page being tested (make sure to not take PR titles and descriptions generally that target multiple pages as the same, if they target multiple pages, each page should be analyzed independently)
                     - Whenever detecting that a human review is required, you should set the recommendation to "review_required" or "reject" depending on the severity of the changes. Never "pass".
 
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
                     - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
                     - Pay close attention to the PR title and description for explicit or implicit mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
-                    - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
-                    - User intention expressed via the PR title and description should be the most important metric for the visual analysis.
+                    - Make sure that the PR title and description are clear on which page the changes are happening. Otherwise don't take them in consideration.
+                    - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" on the about us page, or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
