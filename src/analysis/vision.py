@@ -61,8 +61,6 @@ async def analyze_images_with_vision(
                 "role": "system",
                 "content": f"""
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
-                    Always make sure you are using the PR title and description to guide your analysis and identify if a certain change is expected or not. Make sure to apply that to the correct page if multiple pages are tested.
-                    The PR title and description need to make it clear on which page the changes are happening.
 
                     Critical checks (Must be performed first):
                     1. Section presence check:
