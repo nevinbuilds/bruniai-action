@@ -98,15 +98,11 @@ async def analyze_images_with_vision(
                     - Minor styling changes that don't affect layout
                     - If the section animates or moves
 
-                    Changes that require human review:
-                    - Anything that goes against the PR title and description implicit requirements for the page being tested (make sure to not take PR titles and descriptions generally that target multiple pages as the same, if they target multiple pages, each page should be analyzed independently)
-                    - Whenever detecting that a human review is required, you should set the recommendation to "review_required" or "reject" depending on the severity of the changes. Never "pass".
-
                     **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
                     - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
-                    - Pay close attention to the PR title and description for explicit or implicit mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
-                    - Make sure that the PR title and description are clear on which page the changes are happening. Otherwise don't take them in consideration.
-                    - If the PR specifically states that no visual changes are expected for the page that is being tested (e.g., "nothing changes visually" on the about us page, or "backend-only changes"), this should be taken in consideration.
+                    - If its clear to what page the PR title and description are referring to and they refer to the current page being tested, then use it as user intent. Otherwise don't take them in consideration.
+                    - In the case its very clear that they refer to this page, then pay close attention to the PR title and description for explicit or implicit mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
+                    - If the PR specifically states that no visual changes are expected for the page that is being tested (e.g., "nothing changes visually" on the about us page, or "backend-only changes" and the current page has a URL like /about-us), this should be taken in consideration.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
