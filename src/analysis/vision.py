@@ -96,11 +96,10 @@ async def analyze_images_with_vision(
                     - Minor styling changes that don't affect layout
                     - If the section animates or moves
 
-                    **IMPORTANT CONSIDERATIONS FROM PR CONTEXT:**
+                    **PR CONTEXT:**
                     - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
-                    - If its clear to what page the PR title and description are referring to and they refer to the current page being tested, then use it as user intent. Otherwise don't take them in consideration.
-                    - In the case its very clear that they refer to this page, then pay close attention to the PR title and description for explicit or implicit mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
-                    - If the PR specifically states that no visual changes are expected for the page that is being tested (e.g., "nothing changes visually" on the about us page, or "backend-only changes" and the current page has a URL like /about-us), this should be taken in consideration.
+                    - If its clear to what page the PR title and description are referring to and they refer to the current page being tested (preview_url), then use it as user intent. Otherwise don't take them in consideration.
+                    - In the case its very clear that they refer to this page (preview_url), then pay close attention to the PR title and description for mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
