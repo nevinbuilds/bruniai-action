@@ -7,6 +7,10 @@ from datetime import datetime
 
 logger = logging.getLogger("agent-runner")
 
+def escape_curly_braces(text: str) -> str:
+    """Escapes curly braces in a string to prevent f-string injection."""
+    return text.replace("{", "{{").replace("}", "}}")
+
 async def analyze_images_with_vision(
     base_screenshot: str,
     pr_screenshot: str,
@@ -52,11 +56,14 @@ async def analyze_images_with_vision(
         # Create OpenAI client
         client = openai.OpenAI()
 
+        pr_title_formatted = escape_curly_braces(pr_title if pr_title else "No title provided.")
+        truncated_desc_formatted = escape_curly_braces(pr_description[:200] + ("..." if len(pr_description) > 200 else "") if pr_description else "No description provided.")
+
         # Prepare the messages for GPT-4 Vision
         messages = [
             {
                 "role": "system",
-                "content": """
+                "content": f"""
                     You are a system designed to identify structural and visual changes in websites for testing purposes. Your primary responsibility is to detect and report significant structural changes, with a particular focus on missing or altered sections.
 
                     Critical checks (Must be performed first):
@@ -84,6 +91,13 @@ async def analyze_images_with_vision(
                        - Ensure navigation elements remain accessible
                        - Use the sections analysis to guide your analysis, the analysis will be delimited by ###.
 
+                    4. Extract the relative URL for the current page being tested.
+                       - The relative URL is the URL of the current page being tested. Remove the base URL from the preview_url.
+                       - The resulting relative URL should be used to determine if the PR title and description refer to the current page being tested.
+                       - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
+                        - If its clear to what page the PR title and description are referring to and they refer to the current page being tested (preview_url), then use it as user intent. Otherwise don't take them in consideration.
+                        - In the case its very clear that they refer to this page (relative url), then pay close attention to the PR title and description for mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
+
                     Non-critical changes (Should be noted but not flagged as issues):
                     - Text content changes
                     - Menu item text updates
@@ -92,10 +106,11 @@ async def analyze_images_with_vision(
                     - Price changes
                     - Minor styling changes that don't affect layout
                     - If the section animates or moves
+                    - If the PR title and description refer to a page that is not the current page being tested, then don't take them in consideration.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
-                    {
+                    {{
                         "id": "auto-generated-uuid",
                         "url": "base_url_will_be_filled",
                         "preview_url": "preview_url_will_be_filled",
@@ -104,39 +119,39 @@ async def analyze_images_with_vision(
                         "timestamp": "timestamp_will_be_filled",
                         "status": "pass" | "fail" | "warning" | "none",
                         "status_enum": "pass" | "fail" | "warning" | "none",
-                        "critical_issues": {
+                        "critical_issues": {{
                             "sections": [
-                                {
+                                {{
                                     "name": "Section Name",
                                     "status": "Present" | "Missing",
                                     "description": "Description of the section and its expected location/content if missing"
-                                }
+                                }}
                                 ...
                             ],
                             "summary": "Summary of all critical issues found"
-                        },
+                        }},
                         "critical_issues_enum": "none" | "missing_sections" | "other_issues",
-                        "structural_analysis": {
+                        "structural_analysis": {{
                             "section_order": "Analysis of section ordering changes",
                             "layout": "Analysis of layout structure changes",
                             "broken_layouts": "Description of any broken layouts found"
-                        },
-                        "visual_changes": {
+                        }},
+                        "visual_changes": {{
                             "diff_highlights": ["List of specific visual differences found"],
                             "animation_issues": "Description of any animation-related findings",
                             "conclusion": "Overall conclusion about visual changes"
-                        },
+                        }},
                         "visual_changes_enum": "none" | "minor" | "significant",
-                        "conclusion": {
+                        "conclusion": {{
                             "critical_issues": "Summary of critical issues impact",
                             "visual_changes": "Summary of visual changes impact",
                             "recommendation": "pass" | "review_required" | "reject",
                             "summary": "Overall summary and reasoning for recommendation"
-                        },
+                        }},
                         "recommendation_enum": "pass" | "review_required" | "reject",
                         "created_at": "timestamp_will_be_filled",
                         "user_id": "user_id_will_be_filled"
-                    }
+                    }}
 
                     **CRITICAL: You MUST use ONLY these exact enum values - do not create new ones:**
 
@@ -157,21 +172,6 @@ async def analyze_images_with_vision(
                 """
             }
         ]
-
-        # Add PR context if available
-        if pr_title or pr_description:
-            pr_context = []
-            if pr_title:
-                pr_context.append(f"PR Title: {pr_title}")
-            if pr_description:
-                # Truncate description to 200 characters
-                truncated_desc = pr_description[:200] + ("..." if len(pr_description) > 200 else "")
-                pr_context.append(f"PR Description: {truncated_desc}")
-
-            messages.append({
-                "role": "user",
-                "content": f"Here is the context about this PR:\n\n{' '.join(pr_context)}\n\nUse this information to better understand the expected changes in the screenshots."
-            })
 
         if sections_analysis:
             messages.append({
