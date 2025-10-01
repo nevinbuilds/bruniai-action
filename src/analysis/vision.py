@@ -106,7 +106,7 @@ async def analyze_images_with_vision(
                     - The title is !!!{pr_title_formatted}!!! and the description is !!!{truncated_desc_formatted}!!!
                     - Pay close attention to the PR title and description for explicit or implicit mentions of theme, color adjustments, or statements indicating "nothing changes visually" for the page being tested.
                     - Make sure that the PR title and description are clear on which page the changes are happening. Otherwise don't take them in consideration.
-                    - If the PR specifically states that no visual changes are expected (e.g., "nothing changes visually" on the about us page, or "backend-only changes"), this should be the gold rule for the visual analysis. Because this represents user intent.
+                    - If the PR specifically states that no visual changes are expected for the page that is being tested (e.g., "nothing changes visually" on the about us page, or "backend-only changes"), this should be taken in consideration.
 
                     **IMPORTANT: You must respond with valid JSON only, following this exact structure:**
 
@@ -165,11 +165,10 @@ async def analyze_images_with_vision(
                     - status_enum: "fail" for critical issues, "warning" for significant changes needing review, "pass" for acceptable changes, "none" only for errors
                     - critical_issues_enum: "missing_sections" if ANY sections are missing, "other_issues" for structural problems, "none" if no critical issues
                     - visual_changes_enum: "significant" for major layout/visual changes, "minor" for small styling changes, "none" for no meaningful changes
-                    - recommendation_enum: "reject" for critical failures that break functionality, "review_required" for changes needing human review, "pass" for acceptable changes. if the PR's intention goes against the visual changes, then the recommendation should be "review_required" or "reject" depending on the severity of the changes.
+                    - recommendation_enum: "reject" for critical failures that break functionality, "review_required" for changes needing human review, "pass" for acceptable changes.
                     - Be specific in descriptions and highlight the reasoning behind your assessment
                     - Focus on structural integrity and missing sections as the most critical issues
                     - Note animations as non-critical but important context
-                    - Always prioritize the user's explicit intention as conveyed in the PR title and description when assessing visual differences. If the PR states that no visual changes are expected, treat any detected visual changes with a higher degree of scrutiny, potentially flagging them as critical if they contradict the stated intention.
                 """
             }
         ]
