@@ -71,7 +71,10 @@ def post_pr_comment(summary: str):
 
     # Look for a comment that starts with our header
     for comment in comments:
-        if comment["body"].startswith("Information about visual testing analysis provided by [bruniai]"):
+        if (comment["body"].startswith("Information about visual testing analysis provided by [bruniai]") or
+            comment["body"].startswith("# ✅ Visual Testing Report") or
+            comment["body"].startswith("# ⚠️ Visual Testing Report") or
+            comment["body"].startswith("# ❌ Visual Testing Report")):
             existing_comment_id = comment["id"]
             break
 
@@ -107,75 +110,82 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
         "reject": "❌"
     }.get(recommendation, "❓")
 
-    markdown_parts.append(f"## {status_emoji} **Recommendation: {recommendation.replace('_', ' ').title()}**\n")
+    # New format header
+    markdown_parts.append(f"# {status_emoji} Visual Testing Report — {recommendation.replace('_', ' ').title()}")
+    markdown_parts.append("*1 page analyzed by [bruniai](https://www.brunivisual.com/)*  ")
 
     # Add report URL if provided
     if report_url:
-        markdown_parts.append(f"📊 **[View Full Report]({report_url})**\n")
+        markdown_parts.append(f"[📦 View Artifacts]({report_url})")
 
+    markdown_parts.append("")
+    markdown_parts.append("---")
+    markdown_parts.append("")
+
+    # Page header
+    markdown_parts.append("## Page 1: `/`")
+    markdown_parts.append("")
+
+    # Critical Sections Check
     critical_issues = visual_analysis.get("critical_issues", {})
     if critical_issues and (critical_issues.get("sections") or critical_issues.get("summary")):
-        markdown_parts.append("### 🚨 Critical Issues")
+        markdown_parts.append("### 🚨 Critical Sections Check")
+        markdown_parts.append("| Section | Status |")
+        markdown_parts.append("|----------------------------------------|--------|")
 
         sections = critical_issues.get("sections", [])
         if sections:
-            markdown_parts.append("**Section Status:**")
             for section in sections:
                 name = section.get("name", "Unknown Section")
                 status = section.get("status", "Unknown")
-                description = section.get("description", "")
                 status_icon = "❌" if status == "Missing" else "✅"
-                markdown_parts.append(f"- {status_icon} **{name}**: {status}")
-                if description and status == "Missing":
-                    markdown_parts.append(f"  - {description}")
+                markdown_parts.append(f"| {name:<38} | {status_icon} |")
 
-        summary = critical_issues.get("summary", "")
-        if summary:
-            markdown_parts.append(f"**Summary:** {summary}")
         markdown_parts.append("")
 
+    # Visual Changes
     visual_changes = visual_analysis.get("visual_changes", {})
     if visual_changes and any(visual_changes.values()):
         markdown_parts.append("### 🎨 Visual Changes")
 
         diff_highlights = visual_changes.get("diff_highlights", [])
         if diff_highlights:
-            markdown_parts.append("**Key Differences:**")
             for highlight in diff_highlights:
                 markdown_parts.append(f"- {highlight}")
 
         animation_issues = visual_changes.get("animation_issues", "")
         if animation_issues:
-            markdown_parts.append(f"**Animation Notes:** {animation_issues}")
+            markdown_parts.append(f"- {animation_issues}")
 
         conclusion = visual_changes.get("conclusion", "")
         if conclusion:
-            markdown_parts.append(f"**Analysis:** {conclusion}")
+            markdown_parts.append(f"- {conclusion}")
         markdown_parts.append("")
 
+    # Structure
     structural = visual_analysis.get("structural_analysis", {})
     if structural and any(structural.values()):
-        markdown_parts.append("### 🏗️ Structural Analysis")
+        markdown_parts.append("### 🏗️ Structure")
 
         section_order = structural.get("section_order", "")
         if section_order:
-            markdown_parts.append(f"**Section Order:** {section_order}")
+            markdown_parts.append(f"- Section order {section_order}")
 
         layout = structural.get("layout", "")
         if layout:
-            markdown_parts.append(f"**Layout:** {layout}")
+            markdown_parts.append(f"- Layout {layout}")
 
         broken_layouts = structural.get("broken_layouts", "")
         if broken_layouts:
-            markdown_parts.append(f"**Issues:** {broken_layouts}")
+            markdown_parts.append(f"- {broken_layouts}")
         markdown_parts.append("")
 
-    conclusion = visual_analysis.get("conclusion", {})
-    if conclusion and conclusion.get("summary"):
-        markdown_parts.append("### 📋 Summary")
-        summary = conclusion.get("summary", "")
-        if summary:
-            markdown_parts.append(summary)
+        # Reference Structure (collapsible section)
+        markdown_parts.append("<details>")
+        markdown_parts.append("<summary>📖 Reference Structure (click to expand)</summary>")
         markdown_parts.append("")
+        markdown_parts.append("*(Your detailed analysis goes here)*")
+        markdown_parts.append("")
+        markdown_parts.append("</details>")
 
     return "\n".join(markdown_parts)
