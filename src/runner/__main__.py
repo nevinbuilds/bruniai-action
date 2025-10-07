@@ -287,26 +287,7 @@ async def main():
                 final_summary += f"\n\n📊 **Complete Report**: [View detailed analysis]({report_url})"
 
             # Post to GitHub
-            # Create structured data for the new format
-            structured_analysis = {
-                "overall_recommendation_enum": "pass",  # Default, could be determined from analyses
-                "pages": []
-            }
-
-            for page_analysis in all_analyses:
-                visual_analysis = page_analysis.get('visual_analysis', {})
-                page_data = {
-                    "page_name": page_analysis.get('page_path', 'Unknown'),
-                    "critical_issues": visual_analysis.get('critical_issues', {}),
-                    "visual_changes": visual_analysis.get('visual_changes', {}),
-                    "structural_analysis": {
-                        **visual_analysis.get('structural_analysis', {}),
-                        "structural_analysis_details": page_analysis.get('sections_analysis', '')
-                    }
-                }
-                structured_analysis["pages"].append(page_data)
-
-            post_pr_comment(structured_analysis, report_url)
+            post_pr_comment(final_summary)
             logger.info("Complete analysis has been logged above.")
 
         except RateLimitError as e:
