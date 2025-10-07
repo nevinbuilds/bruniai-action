@@ -149,6 +149,7 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
     markdown_parts = []
 
     # Determine status using the general function
+    print('visual_analysis markdown ------- ', visual_analysis)
     status, status_emoji = determine_status_from_visual_analysis(visual_analysis)
 
     # New format header

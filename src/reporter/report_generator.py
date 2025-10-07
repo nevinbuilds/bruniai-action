@@ -49,6 +49,7 @@ def parse_multi_page_analysis_results(
         image_refs = page_result.get('image_refs')
 
         # Determine status using the general function
+        print('visual_analysis API ------- ', visual_analysis)
         status, _ = determine_status_from_visual_analysis(visual_analysis)
 
         # Parse the visual analysis to extract structured data
