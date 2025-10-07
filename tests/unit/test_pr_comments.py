@@ -38,7 +38,17 @@ def test_post_pr_comment_update_existing():
             with patch("src.github.pr_comments.get_github_app_token", return_value="fake_token"):
                 # Mock os.getenv to return fake repo, PR number, and run ID
                 with patch("os.getenv", side_effect=lambda key: {"GITHUB_REPOSITORY": "org/repo", "PR_NUMBER": "123", "GITHUB_RUN_ID": "456"}.get(key)):
-                    post_pr_comment("Updated summary")
+                    # Create test structured data
+                    test_visual_analysis = {
+                        "overall_recommendation_enum": "pass",
+                        "pages": [{
+                            "page_name": "/",
+                            "critical_issues": {"sections": []},
+                            "visual_changes": {},
+                            "structural_analysis": {}
+                        }]
+                    }
+                    post_pr_comment(test_visual_analysis)
                     mock_patch.assert_called_once()
 
 def test_get_pr_number_from_event_success():

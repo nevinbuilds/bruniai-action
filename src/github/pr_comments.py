@@ -75,7 +75,10 @@ def post_pr_comment(visual_analysis: dict, report_url: str = None):
 
     # Look for a comment that starts with our header.
     for comment in comments:
-        if comment["body"].startswith("Information about visual testing analysis provided by [bruniai]"):
+        if (comment["body"].startswith("Information about visual testing analysis provided by [bruniai]") or
+            comment["body"].startswith("# ✅ Visual Testing Report") or
+            comment["body"].startswith("# ⚠️ Visual Testing Report") or
+            comment["body"].startswith("# ❌ Visual Testing Report")):
             existing_comment_id = comment["id"]
             break
 
