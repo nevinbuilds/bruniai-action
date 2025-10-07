@@ -4,6 +4,7 @@ import logging
 import requests
 from typing import List, Dict, Any, Literal
 from .auth import get_github_app_token
+from analysis.vision import determine_status_from_visual_analysis
 
 logger = logging.getLogger("agent-runner")
 
@@ -147,16 +148,19 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
 
     markdown_parts = []
 
-    recommendation = visual_analysis.get("status_enum", "unknown")
-    status_emoji = {
-        "pass": "✅",
-        "review_required": "⚠️",
-        "reject": "❌"
-    }.get(recommendation, "❓")
+    # Determine status using the general function
+    status, status_emoji = determine_status_from_visual_analysis(visual_analysis)
 
     # New format header
-    markdown_parts.append(f"# {status_emoji} Visual Testing Report — {recommendation.replace('_', ' ').title()}")
+    markdown_parts.append(f"# {status_emoji} Visual Testing Report — {status.replace('_', ' ').title()}")
     markdown_parts.append("*1 page analyzed by [bruniai](https://www.brunivisual.com/)*  ")
+
+    # Add visual changes conclusion if available
+    visual_changes = visual_analysis.get("visual_changes", {})
+    conclusion = visual_changes.get("conclusion", "")
+    if conclusion:
+        markdown_parts.append(f"**Visual Changes:** {status_emoji} {conclusion}")
+        markdown_parts.append("")
 
     # Add report URL if provided
     if report_url:
@@ -280,12 +284,8 @@ def format_multi_page_analysis_to_markdown(reports: List[Dict[str, Any]], report
 
     for i, report in enumerate(reports, 1):
         page_path = report.get('page_path', f'Page {i}')
-        status = report.get('status', 'unknown')
-        status_icon = {
-            "pass": "✅",
-            "warning": "⚠️",
-            "fail": "❌"
-        }.get(status, "❓")
+        # Use the same status determination logic
+        status, status_icon = determine_status_from_visual_analysis(report)
         markdown_parts.append(f"| {page_path} | {status_icon} {status} |")
 
     markdown_parts.append("")
@@ -293,12 +293,8 @@ def format_multi_page_analysis_to_markdown(reports: List[Dict[str, Any]], report
     # Individual page details (collapsible)
     for i, report in enumerate(reports, 1):
         page_path = report.get('page_path', f'Page {i}')
-        status = report.get('status', 'unknown')
-        status_icon = {
-            "pass": "✅",
-            "warning": "⚠️",
-            "fail": "❌"
-        }.get(status, "❓")
+        # Use the same status determination logic
+        status, status_icon = determine_status_from_visual_analysis(report)
 
         markdown_parts.append(f"<details>")
         markdown_parts.append(f"<summary>{status_icon} Page {i}: {page_path} ({status})</summary>")

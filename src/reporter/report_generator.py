@@ -6,6 +6,7 @@ from .types import (
     TestData,
     PageReport,
 )
+from analysis.vision import determine_status_from_visual_analysis
 
 def parse_multi_page_analysis_results(
     pr_number: str,
@@ -47,33 +48,8 @@ def parse_multi_page_analysis_results(
         sections_analysis = page_result['sections_analysis']
         image_refs = page_result.get('image_refs')
 
-        # Determine status based on visual analysis
-        status = "pass"  # Default to pass
-        if isinstance(visual_analysis, dict):
-            # Check for critical issues
-            critical_issues_enum = visual_analysis.get("critical_issues_enum", "none")
-            if critical_issues_enum != "none":
-                status = "fail"
-            else:
-                # Check for visual changes
-                visual_changes_enum = visual_analysis.get("visual_changes_enum", "none")
-                recommendation_enum = visual_analysis.get("recommendation_enum", "pass")
-
-                if visual_changes_enum == "significant" or recommendation_enum == "review_required":
-                    status = "warning"
-                elif visual_changes_enum == "minor":
-                    status = "warning"
-                else:
-                    status = "pass"
-        else:
-            # Fallback for string-based analysis
-            analysis_text = str(visual_analysis).lower()
-            if "missing sections" in analysis_text or "critical" in analysis_text:
-                status = "fail"
-            elif ("significant changes" in analysis_text and "no significant changes" not in analysis_text) or "review required" in analysis_text:
-                status = "warning"
-            else:
-                status = "pass"
+        # Determine status using the general function
+        status, _ = determine_status_from_visual_analysis(visual_analysis)
 
         # Parse the visual analysis to extract structured data
         # (Assume visual_analysis is already structured for multi-page)

@@ -7,6 +7,45 @@ from datetime import datetime
 
 logger = logging.getLogger("agent-runner")
 
+def determine_status_from_visual_analysis(visual_analysis: dict) -> tuple[str, str]:
+    """
+    Determine status and emoji from visual analysis data.
+
+    Args:
+        visual_analysis: Dictionary containing visual analysis data
+
+    Returns:
+        Tuple of (status, emoji) where status is 'pass', 'warning', 'fail', or 'none'
+    """
+    if not visual_analysis or not isinstance(visual_analysis, dict):
+        return "none", "❓"
+
+    # Get visual changes conclusion to determine status
+    visual_changes = visual_analysis.get("visual_changes", {})
+    conclusion = visual_changes.get("conclusion", "")
+
+    # Determine status from visual changes conclusion
+    if conclusion:
+        conclusion_lower = conclusion.lower()
+        if any(word in conclusion_lower for word in ["critical", "broken", "missing", "failed", "error", "reject"]):
+            return "fail", "❌"
+        elif any(word in conclusion_lower for word in ["review", "warning", "caution", "significant", "major"]):
+            return "warning", "⚠️"
+        elif any(word in conclusion_lower for word in ["pass", "acceptable", "minor", "good", "approved"]):
+            return "pass", "✅"
+        else:
+            # Default to warning for unclear conclusions
+            return "warning", "⚠️"
+    else:
+        # Fallback to recommendation_enum if no conclusion
+        recommendation = visual_analysis.get("recommendation_enum", "unknown")
+        status_emoji = {
+            "pass": "✅",
+            "review_required": "⚠️",
+            "reject": "❌"
+        }.get(recommendation, "❓")
+        return recommendation, status_emoji
+
 def escape_curly_braces(text: str) -> str:
     """Escapes curly braces in a string to prevent f-string injection."""
     return text.replace("{", "{{").replace("}", "}}")
