@@ -2,9 +2,53 @@ import os
 import json
 import logging
 import requests
+from typing import List, Dict, Any, Literal
 from .auth import get_github_app_token
 
 logger = logging.getLogger("agent-runner")
+
+# Status enums matching the TypeScript types
+ReportStatus = Literal['pass', 'fail', 'warning', 'none']
+
+def get_test_status(reports: List[Dict[str, Any]]) -> str:
+    """
+    Determine overall test status from multiple reports, similar to TypeScript getTestStatus.
+
+    Logic:
+    - If any report has status 'fail' -> overall status is 'fail'
+    - Else if any report has status 'warning' -> overall status is 'warning'
+    - Else if any report has status 'pass' -> overall status is 'pass'
+    - If no reports or all are 'none' -> overall status is 'none'
+
+    Args:
+        reports: List of report dictionaries with 'status' or 'status_enum' field
+
+    Returns:
+        Overall status as string: 'pass', 'fail', 'warning', or 'none'
+    """
+    if not reports or len(reports) == 0:
+        return 'none'
+
+    # Check for any failures first (highest priority)
+    for report in reports:
+        status = report.get('status') or report.get('status_enum', 'none')
+        if status == 'fail':
+            return 'fail'
+
+    # Check for any warnings (second priority)
+    for report in reports:
+        status = report.get('status') or report.get('status_enum', 'none')
+        if status == 'warning':
+            return 'warning'
+
+    # Check for any passes (third priority)
+    for report in reports:
+        status = report.get('status') or report.get('status_enum', 'none')
+        if status == 'pass':
+            return 'pass'
+
+    # Default to none if no meaningful status found
+    return 'none'
 
 def get_pr_number_from_event():
     event_path = os.getenv("GITHUB_EVENT_PATH")
@@ -187,5 +231,84 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
         markdown_parts.append("*(Your detailed analysis goes here)*")
         markdown_parts.append("")
         markdown_parts.append("</details>")
+
+    return "\n".join(markdown_parts)
+
+def format_multi_page_analysis_to_markdown(reports: List[Dict[str, Any]], report_url: str = None) -> str:
+    """
+    Convert multiple page analysis results to readable markdown format with overall status.
+
+    Args:
+        reports: List of report dictionaries with status information
+        report_url: Optional URL to the full report
+
+    Returns:
+        Formatted markdown string with overall status and page details
+    """
+    if not reports or len(reports) == 0:
+        return "❌ **Error**: No analysis data available"
+
+    # Determine overall status using our new logic
+    overall_status = get_test_status(reports)
+
+    # Status emoji mapping
+    status_emoji = {
+        "pass": "✅",
+        "warning": "⚠️",
+        "fail": "❌",
+        "none": "❓"
+    }.get(overall_status, "❓")
+
+    markdown_parts = []
+
+    # Overall header with status
+    markdown_parts.append(f"# {status_emoji} Visual Testing Report — {overall_status.replace('_', ' ').title()}")
+    markdown_parts.append(f"*{len(reports)} page{'s' if len(reports) != 1 else ''} analyzed by [bruniai](https://www.brunivisual.com/)*  ")
+
+    # Add report URL if provided
+    if report_url:
+        markdown_parts.append(f"[📦 View Artifacts]({report_url})")
+
+    markdown_parts.append("")
+    markdown_parts.append("---")
+    markdown_parts.append("")
+
+    # Summary of all pages
+    markdown_parts.append("## 📊 Summary")
+    markdown_parts.append("| Page | Status |")
+    markdown_parts.append("|------|--------|")
+
+    for i, report in enumerate(reports, 1):
+        page_path = report.get('page_path', f'Page {i}')
+        status = report.get('status', 'unknown')
+        status_icon = {
+            "pass": "✅",
+            "warning": "⚠️",
+            "fail": "❌"
+        }.get(status, "❓")
+        markdown_parts.append(f"| {page_path} | {status_icon} {status} |")
+
+    markdown_parts.append("")
+
+    # Individual page details (collapsible)
+    for i, report in enumerate(reports, 1):
+        page_path = report.get('page_path', f'Page {i}')
+        status = report.get('status', 'unknown')
+        status_icon = {
+            "pass": "✅",
+            "warning": "⚠️",
+            "fail": "❌"
+        }.get(status, "❓")
+
+        markdown_parts.append(f"<details>")
+        markdown_parts.append(f"<summary>{status_icon} Page {i}: {page_path} ({status})</summary>")
+        markdown_parts.append("")
+
+        # Format individual page analysis
+        page_analysis = format_visual_analysis_to_markdown(report, report_url)
+        markdown_parts.append(page_analysis)
+        markdown_parts.append("")
+        markdown_parts.append("</details>")
+        markdown_parts.append("")
 
     return "\n".join(markdown_parts)
