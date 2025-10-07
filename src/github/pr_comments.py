@@ -147,7 +147,7 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
 
     markdown_parts = []
 
-    recommendation = visual_analysis.get("recommendation_enum", "unknown")
+    recommendation = visual_analysis.get("status_enum", "unknown")
     status_emoji = {
         "pass": "✅",
         "review_required": "⚠️",
