@@ -20,31 +20,43 @@ def determine_status_from_visual_analysis(visual_analysis: dict) -> tuple[str, s
     if not visual_analysis or not isinstance(visual_analysis, dict):
         return "none", "❓"
 
-    # Get visual changes conclusion to determine status
-    visual_changes = visual_analysis.get("visual_changes", {})
-    conclusion = visual_changes.get("conclusion", "")
-
-    # Determine status from visual changes conclusion
-    if conclusion:
-        conclusion_lower = conclusion.lower()
-        if any(word in conclusion_lower for word in ["critical", "broken", "missing", "failed", "error", "reject"]):
-            return "fail", "❌"
-        elif any(word in conclusion_lower for word in ["review", "warning", "caution", "significant", "major"]):
-            return "warning", "⚠️"
-        elif any(word in conclusion_lower for word in ["pass", "acceptable", "minor", "good", "approved"]):
-            return "pass", "✅"
+    # Determine status based on visual analysis (original logic)
+    status = "pass"  # Default to pass
+    if isinstance(visual_analysis, dict):
+        # Check for critical issues
+        critical_issues_enum = visual_analysis.get("critical_issues_enum", "none")
+        if critical_issues_enum != "none":
+            status = "fail"
         else:
-            # Default to warning for unclear conclusions
-            return "warning", "⚠️"
+            # Check for visual changes
+            visual_changes_enum = visual_analysis.get("visual_changes_enum", "none")
+            recommendation_enum = visual_analysis.get("recommendation_enum", "pass")
+
+            if visual_changes_enum == "significant" or recommendation_enum == "review_required":
+                status = "warning"
+            elif visual_changes_enum == "minor":
+                status = "warning"
+            else:
+                status = "pass"
     else:
-        # Fallback to recommendation_enum if no conclusion
-        recommendation = visual_analysis.get("recommendation_enum", "unknown")
-        status_emoji = {
-            "pass": "✅",
-            "review_required": "⚠️",
-            "reject": "❌"
-        }.get(recommendation, "❓")
-        return recommendation, status_emoji
+        # Fallback for string-based analysis
+        analysis_text = str(visual_analysis).lower()
+        if "missing sections" in analysis_text or "critical" in analysis_text:
+            status = "fail"
+        elif ("significant changes" in analysis_text and "no significant changes" not in analysis_text) or "review required" in analysis_text:
+            status = "warning"
+        else:
+            status = "pass"
+
+    # Map status to emoji
+    status_emoji = {
+        "pass": "✅",
+        "warning": "⚠️",
+        "fail": "❌",
+        "none": "❓"
+    }.get(status, "❓")
+
+    return status, status_emoji
 
 def escape_curly_braces(text: str) -> str:
     """Escapes curly braces in a string to prevent f-string injection."""
