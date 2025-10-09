@@ -149,7 +149,6 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
     markdown_parts = []
 
     # Determine status using the general function
-    print('visual_analysis markdown ------- ', visual_analysis)
     status, status_emoji = determine_status_from_visual_analysis(visual_analysis)
 
     # New format header
@@ -169,10 +168,6 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
 
     markdown_parts.append("")
     markdown_parts.append("---")
-    markdown_parts.append("")
-
-    # Page header
-    markdown_parts.append("## Page 1: `/`")
     markdown_parts.append("")
 
     # Critical Sections Check
@@ -267,7 +262,7 @@ def format_multi_page_analysis_to_markdown(reports: List[Dict[str, Any]], report
     markdown_parts = []
 
     # Overall header with status
-    markdown_parts.append(f"# {status_emoji} Visual Testing Report — {overall_status.replace('_', ' ').title()}")
+    markdown_parts.append(f"## {status_emoji} Visual Testing Report — {overall_status.replace('_', ' ').title()}")
     markdown_parts.append(f"*{len(reports)} page{'s' if len(reports) != 1 else ''} analyzed by [bruniai](https://www.brunivisual.com/)*  ")
 
     # Add report URL if provided
