@@ -268,7 +268,7 @@ async def analyze_images_with_vision(
         })
 
         response = client.chat.completions.create(
-            model="GPT-4o-mini",
+            model="gpt-4o-mini",
             messages=messages,
             max_tokens=1500,
             temperature=0.2  # Lower temperature for more consistent analysis
