@@ -17,8 +17,28 @@ def determine_status_from_visual_analysis(visual_analysis: dict) -> tuple[str, s
     Returns:
         Tuple of (status, emoji) where status is 'pass', 'warning', 'fail', or 'none'
     """
-    if not visual_analysis or not isinstance(visual_analysis, dict):
+    if not visual_analysis:
         return "none", "❓"
+
+    if not isinstance(visual_analysis, dict):
+        # Fallback for string-based analysis
+        analysis_text = str(visual_analysis).lower()
+        if "missing sections" in analysis_text or "critical" in analysis_text:
+            status = "fail"
+        elif ("significant changes" in analysis_text and "no significant changes" not in analysis_text) or "review required" in analysis_text:
+            status = "warning"
+        else:
+            status = "pass"
+
+        # Map status to emoji
+        status_emoji = {
+            "pass": "✅",
+            "warning": "⚠️",
+            "fail": "❌",
+            "none": "❓"
+        }.get(status, "❓")
+
+        return status, status_emoji
 
     # Determine status based on visual analysis (original logic)
     status = "pass"  # Default to pass
@@ -38,15 +58,6 @@ def determine_status_from_visual_analysis(visual_analysis: dict) -> tuple[str, s
                 status = "warning"
             else:
                 status = "pass"
-    else:
-        # Fallback for string-based analysis
-        analysis_text = str(visual_analysis).lower()
-        if "missing sections" in analysis_text or "critical" in analysis_text:
-            status = "fail"
-        elif ("significant changes" in analysis_text and "no significant changes" not in analysis_text) or "review required" in analysis_text:
-            status = "warning"
-        else:
-            status = "pass"
 
     # Map status to emoji
     status_emoji = {
