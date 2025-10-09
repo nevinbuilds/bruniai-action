@@ -10,6 +10,7 @@ Welcome to the documentation for our Visual Regression Testing project. This pro
 4. [Usage Examples](usage-examples.md)
 5. [Troubleshooting](troubleshooting.md)
 6. [Contributing](contributing.md)
+7. [Running Tests](running-tests.md)
 
 ## Project Overview
 

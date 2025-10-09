@@ -7,6 +7,68 @@ from datetime import datetime
 
 logger = logging.getLogger("agent-runner")
 
+def determine_status_from_visual_analysis(visual_analysis: dict) -> tuple[str, str]:
+    """
+    Determine status and emoji from visual analysis data.
+
+    Args:
+        visual_analysis: Dictionary containing visual analysis data
+
+    Returns:
+        Tuple of (status, emoji) where status is 'pass', 'warning', 'fail', or 'none'
+    """
+    if not visual_analysis:
+        return "none", "❓"
+
+    if not isinstance(visual_analysis, dict):
+        # Fallback for string-based analysis
+        analysis_text = str(visual_analysis).lower()
+        if "missing sections" in analysis_text or "critical" in analysis_text:
+            status = "fail"
+        elif ("significant changes" in analysis_text and "no significant changes" not in analysis_text) or "review required" in analysis_text:
+            status = "warning"
+        else:
+            status = "pass"
+
+        # Map status to emoji
+        status_emoji = {
+            "pass": "✅",
+            "warning": "⚠️",
+            "fail": "❌",
+            "none": "❓"
+        }.get(status, "❓")
+
+        return status, status_emoji
+
+    # Determine status based on visual analysis (original logic)
+    status = "pass"  # Default to pass
+    if isinstance(visual_analysis, dict):
+        # Check for critical issues
+        critical_issues_enum = visual_analysis.get("critical_issues_enum", "none")
+        if critical_issues_enum != "none":
+            status = "fail"
+        else:
+            # Check for visual changes
+            visual_changes_enum = visual_analysis.get("visual_changes_enum", "none")
+            recommendation_enum = visual_analysis.get("recommendation_enum", "pass")
+
+            if visual_changes_enum == "significant" or recommendation_enum == "review_required":
+                status = "warning"
+            elif visual_changes_enum == "minor":
+                status = "warning"
+            else:
+                status = "pass"
+
+    # Map status to emoji
+    status_emoji = {
+        "pass": "✅",
+        "warning": "⚠️",
+        "fail": "❌",
+        "none": "❓"
+    }.get(status, "❓")
+
+    return status, status_emoji
+
 def escape_curly_braces(text: str) -> str:
     """Escapes curly braces in a string to prevent f-string injection."""
     return text.replace("{", "{{").replace("}", "}}")

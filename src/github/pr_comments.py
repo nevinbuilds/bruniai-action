@@ -2,9 +2,54 @@ import os
 import json
 import logging
 import requests
+from typing import List, Dict, Any, Literal
 from .auth import get_github_app_token
+from analysis.vision import determine_status_from_visual_analysis
 
 logger = logging.getLogger("agent-runner")
+
+# Status enums matching the TypeScript types
+ReportStatus = Literal['pass', 'fail', 'warning', 'none']
+
+def get_test_status(reports: List[Dict[str, Any]]) -> str:
+    """
+    Determine overall test status from multiple reports, similar to TypeScript getTestStatus.
+
+    Logic:
+    - If any report has status 'fail' -> overall status is 'fail'
+    - Else if any report has status 'warning' -> overall status is 'warning'
+    - Else if any report has status 'pass' -> overall status is 'pass'
+    - If no reports or all are 'none' -> overall status is 'none'
+
+    Args:
+        reports: List of report dictionaries with 'status' or 'status_enum' field
+
+    Returns:
+        Overall status as string: 'pass', 'fail', 'warning', or 'none'
+    """
+    if not reports or len(reports) == 0:
+        return 'none'
+
+    # Check for any failures first (highest priority)
+    for report in reports:
+        status = report.get('status') or report.get('status_enum', 'none')
+        if status == 'fail':
+            return 'fail'
+
+    # Check for any warnings (second priority)
+    for report in reports:
+        status = report.get('status') or report.get('status_enum', 'none')
+        if status == 'warning':
+            return 'warning'
+
+    # Check for any passes (third priority)
+    for report in reports:
+        status = report.get('status') or report.get('status_enum', 'none')
+        if status == 'pass':
+            return 'pass'
+
+    # Default to none if no meaningful status found
+    return 'none'
 
 def get_pr_number_from_event():
     event_path = os.getenv("GITHUB_EVENT_PATH")
@@ -71,7 +116,10 @@ def post_pr_comment(summary: str):
 
     # Look for a comment that starts with our header
     for comment in comments:
-        if comment["body"].startswith("Information about visual testing analysis provided by [bruniai]"):
+        if (comment["body"].startswith("Information about visual testing analysis provided by [bruniai]") or
+            comment["body"].startswith("# ✅ Visual Testing Report") or
+            comment["body"].startswith("# ⚠️ Visual Testing Report") or
+            comment["body"].startswith("# ❌ Visual Testing Report")):
             existing_comment_id = comment["id"]
             break
 
@@ -100,82 +148,159 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
 
     markdown_parts = []
 
-    recommendation = visual_analysis.get("recommendation_enum", "unknown")
-    status_emoji = {
-        "pass": "✅",
-        "review_required": "⚠️",
-        "reject": "❌"
-    }.get(recommendation, "❓")
+    # Determine status using the general function
+    status, status_emoji = determine_status_from_visual_analysis(visual_analysis)
 
-    markdown_parts.append(f"## {status_emoji} **Recommendation: {recommendation.replace('_', ' ').title()}**\n")
+    # New format header
+    markdown_parts.append(f"## {status_emoji} Visual Testing Report — {status.replace('_', ' ').title()}")
+    markdown_parts.append("*1 page analyzed by [bruniai](https://www.brunivisual.com/)*  ")
+
+    # Add visual changes conclusion if available
+    visual_changes = visual_analysis.get("visual_changes", {})
+    conclusion = visual_changes.get("conclusion", "")
+    if conclusion:
+        markdown_parts.append(f"**Visual Changes:** {status_emoji} {conclusion}")
+        markdown_parts.append("")
 
     # Add report URL if provided
     if report_url:
-        markdown_parts.append(f"📊 **[View Full Report]({report_url})**\n")
+        markdown_parts.append(f"[📦 View Artifacts]({report_url})")
 
+    markdown_parts.append("")
+    markdown_parts.append("---")
+    markdown_parts.append("")
+
+    # Critical Sections Check
     critical_issues = visual_analysis.get("critical_issues", {})
     if critical_issues and (critical_issues.get("sections") or critical_issues.get("summary")):
-        markdown_parts.append("### 🚨 Critical Issues")
+        markdown_parts.append("### 🚨 Critical Sections Check")
+        markdown_parts.append("| Section | Status |")
+        markdown_parts.append("|----------------------------------------|--------|")
 
         sections = critical_issues.get("sections", [])
         if sections:
-            markdown_parts.append("**Section Status:**")
             for section in sections:
                 name = section.get("name", "Unknown Section")
                 status = section.get("status", "Unknown")
-                description = section.get("description", "")
                 status_icon = "❌" if status == "Missing" else "✅"
-                markdown_parts.append(f"- {status_icon} **{name}**: {status}")
-                if description and status == "Missing":
-                    markdown_parts.append(f"  - {description}")
+                markdown_parts.append(f"| {name:<38} | {status_icon} |")
 
-        summary = critical_issues.get("summary", "")
-        if summary:
-            markdown_parts.append(f"**Summary:** {summary}")
         markdown_parts.append("")
 
+    # Visual Changes
     visual_changes = visual_analysis.get("visual_changes", {})
     if visual_changes and any(visual_changes.values()):
         markdown_parts.append("### 🎨 Visual Changes")
 
         diff_highlights = visual_changes.get("diff_highlights", [])
         if diff_highlights:
-            markdown_parts.append("**Key Differences:**")
             for highlight in diff_highlights:
                 markdown_parts.append(f"- {highlight}")
 
         animation_issues = visual_changes.get("animation_issues", "")
         if animation_issues:
-            markdown_parts.append(f"**Animation Notes:** {animation_issues}")
+            markdown_parts.append(f"- {animation_issues}")
 
         conclusion = visual_changes.get("conclusion", "")
         if conclusion:
-            markdown_parts.append(f"**Analysis:** {conclusion}")
+            markdown_parts.append(f"- {conclusion}")
         markdown_parts.append("")
 
+    # Structure
     structural = visual_analysis.get("structural_analysis", {})
     if structural and any(structural.values()):
-        markdown_parts.append("### 🏗️ Structural Analysis")
+        markdown_parts.append("### 🏗️ Structure")
 
         section_order = structural.get("section_order", "")
         if section_order:
-            markdown_parts.append(f"**Section Order:** {section_order}")
+            markdown_parts.append(f"- Section order {section_order}")
 
         layout = structural.get("layout", "")
         if layout:
-            markdown_parts.append(f"**Layout:** {layout}")
+            markdown_parts.append(f"- Layout {layout}")
 
         broken_layouts = structural.get("broken_layouts", "")
         if broken_layouts:
-            markdown_parts.append(f"**Issues:** {broken_layouts}")
+            markdown_parts.append(f"- {broken_layouts}")
         markdown_parts.append("")
 
-    conclusion = visual_analysis.get("conclusion", {})
-    if conclusion and conclusion.get("summary"):
-        markdown_parts.append("### 📋 Summary")
-        summary = conclusion.get("summary", "")
-        if summary:
-            markdown_parts.append(summary)
+        # Reference Structure (collapsible section)
+        markdown_parts.append("<details>")
+        markdown_parts.append("<summary>📖 Reference Structure (click to expand)</summary>")
+        markdown_parts.append("")
+        markdown_parts.append("*(Your detailed analysis goes here)*")
+        markdown_parts.append("")
+        markdown_parts.append("</details>")
+
+    return "\n".join(markdown_parts)
+
+def format_multi_page_analysis_to_markdown(reports: List[Dict[str, Any]], report_url: str = None) -> str:
+    """
+    Convert multiple page analysis results to readable markdown format with overall status.
+
+    Args:
+        reports: List of report dictionaries with status information
+        report_url: Optional URL to the full report
+
+    Returns:
+        Formatted markdown string with overall status and page details
+    """
+    if not reports or len(reports) == 0:
+        return "❌ **Error**: No analysis data available"
+
+    # Determine overall status using our new logic
+    overall_status = get_test_status(reports)
+
+    # Status emoji mapping
+    status_emoji = {
+        "pass": "✅",
+        "warning": "⚠️",
+        "fail": "❌",
+        "none": "❓"
+    }.get(overall_status, "❓")
+
+    markdown_parts = []
+
+    # Overall header with status
+    markdown_parts.append(f"## {status_emoji} Visual Testing Report — {overall_status.replace('_', ' ').title()}")
+    markdown_parts.append(f"*{len(reports)} page{'s' if len(reports) != 1 else ''} analyzed by [bruniai](https://www.brunivisual.com/)*  ")
+
+    # Add report URL if provided
+    if report_url:
+        markdown_parts.append(f"[📦 View Artifacts]({report_url})")
+
+    markdown_parts.append("")
+    markdown_parts.append("---")
+    markdown_parts.append("")
+
+    # Summary of all pages
+    markdown_parts.append("## 📊 Summary")
+    markdown_parts.append("| Page | Status |")
+    markdown_parts.append("|------|--------|")
+
+    for i, report in enumerate(reports, 1):
+        page_path = report.get('page_path', f'Page {i}')
+        # Use the same status determination logic
+        status, status_icon = determine_status_from_visual_analysis(report)
+        markdown_parts.append(f"| {page_path} | {status_icon} {status} |")
+
+    markdown_parts.append("")
+
+    # Individual page details (collapsible)
+    for i, report in enumerate(reports, 1):
+        page_path = report.get('page_path', f'Page {i}')
+        # Use the same status determination logic
+        status, status_icon = determine_status_from_visual_analysis(report)
+
+        markdown_parts.append(f"<details>")
+        markdown_parts.append(f"<summary>{status_icon} Page {i}: {page_path} ({status})</summary>")
+        markdown_parts.append("")
+
+        # Format individual page analysis
+        page_analysis = format_visual_analysis_to_markdown(report, report_url)
+        markdown_parts.append(page_analysis)
+        markdown_parts.append("")
+        markdown_parts.append("</details>")
         markdown_parts.append("")
 
     return "\n".join(markdown_parts)
