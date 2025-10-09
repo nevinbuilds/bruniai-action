@@ -152,7 +152,7 @@ def format_visual_analysis_to_markdown(visual_analysis: dict, report_url: str = 
     status, status_emoji = determine_status_from_visual_analysis(visual_analysis)
 
     # New format header
-    markdown_parts.append(f"# {status_emoji} Visual Testing Report — {status.replace('_', ' ').title()}")
+    markdown_parts.append(f"## {status_emoji} Visual Testing Report — {status.replace('_', ' ').title()}")
     markdown_parts.append("*1 page analyzed by [bruniai](https://www.brunivisual.com/)*  ")
 
     # Add visual changes conclusion if available
