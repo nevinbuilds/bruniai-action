@@ -21,7 +21,7 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                 This will serve as our reference structure for visual comparison.
 
                 For the base URL:
-                1. List all major sections found
+                1. List all major sections found. Make sure that the sections actually exist in the base URL and has some content (is not empty), they should be well visible, have content and has actual key elements in it.
                 2. Note their position and structure
                 3. Describe the purpose of each section
                 4. Note any important visual elements or patterns
@@ -37,6 +37,7 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                    - Key Elements: [list]
                    - Visual Patterns: [description]
                    - Animation : [description]
+                   - Section HTML id or class: [description]
 
                 2. [Section Name]
                    ...
@@ -48,7 +49,8 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
             section_prompt = f"""Please analyze this base URL to establish our reference structure:
             Base URL: {base_url}
 
-            Focus on identifying all major sections and their characteristics.
+            Focus on identifying all major sections and their characteristics. Make sure that the sections actually exist in the base URL,
+            they should be well visible and only list the ones that are actually present. Don't register sections that are not present in the base URL.
             This will serve as our baseline for comparing visual changes."""
 
             # Add timeout to the Runner.run call
