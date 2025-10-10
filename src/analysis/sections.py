@@ -21,7 +21,7 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                 This will serve as our reference structure for visual comparison.
 
                 For the base URL:
-                1. List all major sections found
+                1. List all major sections found. Make sure that the sections actually exist in the base URL, they should be well visible and only list the ones that are actually present.
                 2. Note their position and structure
                 3. Describe the purpose of each section
                 4. Note any important visual elements or patterns
