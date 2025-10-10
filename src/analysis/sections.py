@@ -49,7 +49,8 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
             section_prompt = f"""Please analyze this base URL to establish our reference structure:
             Base URL: {base_url}
 
-            Focus on identifying all major sections and their characteristics.
+            Focus on identifying all major sections and their characteristics. Make sure that the sections actually exist in the base URL,
+            they should be well visible and only list the ones that are actually present. Don't register sections that are not present in the base URL.
             This will serve as our baseline for comparing visual changes."""
 
             # Add timeout to the Runner.run call
