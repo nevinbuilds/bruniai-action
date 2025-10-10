@@ -37,6 +37,7 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                    - Key Elements: [list]
                    - Visual Patterns: [description]
                    - Animation : [description]
+                   - Section HTML id or class: [description]
 
                 2. [Section Name]
                    ...
