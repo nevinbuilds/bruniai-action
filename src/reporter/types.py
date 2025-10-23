@@ -1,4 +1,4 @@
-from typing import List, TypedDict, Literal, Optional
+from typing import List, TypedDict, Literal, Optional, Dict
 from datetime import datetime
 
 ReportStatus = Literal['pass', 'fail', 'warning']
@@ -35,6 +35,7 @@ class ImageReferences(TypedDict):
     base_screenshot: Optional[str]  # Base64 encoded image data
     pr_screenshot: Optional[str]    # Base64 encoded image data
     diff_image: Optional[str]       # Base64 encoded image data
+    section_screenshots: Optional[Dict[str, Dict[str, str]]]  # Section screenshots with structure: {section_id: {base: "base64", pr: "base64"}}
 
 # Multi-page API types
 class TestData(TypedDict):

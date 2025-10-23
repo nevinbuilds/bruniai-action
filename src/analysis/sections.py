@@ -26,12 +26,15 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                 3. Describe the purpose of each section
                 4. Note any important visual elements or patterns
                 5. Note if the section animates or moves. This is important as it should probably be ignored.
+                6. Generate a unique, descriptive ID for each section (e.g., "hero-section", "features-section", "footer-section")
+
                 Format the response as:
                 ### Base URL Structure:
                 [Overall layout description]
 
                 ### Sections (in order of appearance):
                 1. [Section Name]
+                   - Section ID: [unique-descriptive-id]
                    - Position: [description]
                    - Purpose: [description]
                    - Key Elements: [list]
@@ -40,6 +43,7 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                    - Section HTML id or class: [description]
 
                 2. [Section Name]
+                   - Section ID: [unique-descriptive-id]
                    ...
 
                 This structural information will be used as a reference to analyze visual changes in the preview URL.""",
