@@ -13,7 +13,7 @@ import base64
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # Import from our modules
-from playwright_utils.screenshot import take_screenshot_with_playwright, take_section_screenshot_with_playwright
+from playwright_utils.screenshot import take_screenshot_with_playwright, take_section_screenshot_with_playwright, take_section_screenshot_by_selector
 from playwright_utils.bounding_boxes import extract_section_bounding_boxes
 from github.pr_comments import post_pr_comment, format_visual_analysis_to_markdown
 from image_processing.diff import generate_diff_image
@@ -188,22 +188,23 @@ async def main():
                 section_screenshots = {}
                 for section in sections_with_ids:
                     section_id = section['section_id']
-                    bounding_box = section['boundingBox']
 
                     # Define section screenshot paths
                     base_section_screenshot = os.path.join(images_dir, f"base_screenshot_{page_suffix}_section_{section_id}.png")
                     pr_section_screenshot = os.path.join(images_dir, f"pr_screenshot_{page_suffix}_section_{section_id}.png")
 
-                    # Take section screenshots
-                    base_section_success = await take_section_screenshot_with_playwright(
+                    # Take section screenshots using section IDs and analysis data
+                    base_section_success = await take_section_screenshot_by_selector(
                         page_result['base_url'],
                         base_section_screenshot,
-                        bounding_box
+                        section_id,
+                        sections_analysis
                     )
-                    pr_section_success = await take_section_screenshot_with_playwright(
+                    pr_section_success = await take_section_screenshot_by_selector(
                         page_result['pr_url'],
                         pr_section_screenshot,
-                        bounding_box
+                        section_id,
+                        sections_analysis
                     )
 
                     if base_section_success and pr_section_success:
