@@ -124,17 +124,36 @@ async def extract_section_bounding_boxes(url, selector="section,header,footer,ma
 
             # Try to match sections with data from analysis
             enriched_sections = []
+            used_analysis_sections = set()  # Track which analysis sections have been matched
+
             for i, section in enumerate(sections):
                 section_id = f"section-{i}"  # Default fallback
                 matched_analysis = None
 
                 # Try to match with analysis data
                 if sections_data:
-                    for analysis_section in sections_data:
-                        if _match_section_to_analysis(section, analysis_section):
+                    # First try strict matching
+                    for j, analysis_section in enumerate(sections_data):
+                        if j not in used_analysis_sections and _match_section_to_analysis(section, analysis_section):
                             section_id = analysis_section['section_id']
                             matched_analysis = analysis_section
+                            used_analysis_sections.add(j)
                             break
+
+                    # If no strict match found, try position-based fallback
+                    if not matched_analysis and len(used_analysis_sections) < len(sections_data):
+                        # Sort sections by y-coordinate (top to bottom)
+                        sorted_sections = sorted(sections, key=lambda s: s['boundingBox']['y'])
+                        section_index = sorted_sections.index(section)
+
+                        # Match by order of appearance
+                        for j, analysis_section in enumerate(sections_data):
+                            if j not in used_analysis_sections and j == section_index:
+                                section_id = analysis_section['section_id']
+                                matched_analysis = analysis_section
+                                used_analysis_sections.add(j)
+                                logger.info(f"Position-based fallback match: section {i} -> {section_id}")
+                                break
 
                 section['section_id'] = section_id
                 section['matched_analysis'] = matched_analysis
@@ -157,17 +176,22 @@ def _match_section_to_analysis(section, analysis_section):
     Returns:
         bool: True if sections match
     """
-    # Match by HTML ID
+    # Match by HTML ID (most specific)
     if analysis_section.get('html_id') and section.get('id'):
         if analysis_section['html_id'].lower() == section['id'].lower():
             return True
 
-    # Match by HTML classes
-    if analysis_section.get('html_classes') and section.get('className'):
-        analysis_classes = set(analysis_section['html_classes'].lower().split())
-        section_classes = set(section['className'].lower().split())
-        if analysis_classes.intersection(section_classes):
-            return True
+    # Match by Tag + ALL Classes (strict matching)
+    if (analysis_section.get('html_element') and section.get('tag') and
+        analysis_section.get('html_classes') and section.get('className')):
+
+        # First verify tag names match
+        if analysis_section['html_element'].lower() == section['tag'].lower():
+            # Then check if all analysis classes are present in section classes
+            analysis_classes = set(analysis_section['html_classes'].lower().split())
+            section_classes = set(section['className'].lower().split())
+            if analysis_classes.issubset(section_classes):
+                return True
 
     # Match by ARIA label
     if analysis_section.get('aria_label') and section.get('ariaLabel'):
@@ -179,11 +203,6 @@ def _match_section_to_analysis(section, analysis_section):
         content_words = analysis_section['content_identifier'].lower().split()
         section_text = section['textContent'].lower()
         if all(word in section_text for word in content_words):
-            return True
-
-    # Match by tag name
-    if analysis_section.get('html_element') and section.get('tag'):
-        if analysis_section['html_element'].lower() == section['tag'].lower():
             return True
 
     return False

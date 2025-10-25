@@ -120,8 +120,39 @@ async def take_section_screenshot_by_selector(url, output_path, section_id, sect
                 # Escape special characters in class names for valid CSS selectors
                 escaped_classes = []
                 for cls in classes:
-                    # Escape special characters that are not valid in CSS selectors
-                    escaped_cls = cls.replace('[', '\\[').replace(']', '\\]').replace('#', '\\#').replace(':', '\\:').replace('/', '\\/')
+                    # Properly escape CSS selector special characters
+                    # Escape: [ ] ( ) { } : ; , . ! @ # $ % ^ & * + = | \ / ~ ` " ' < > ? space
+                    escaped_cls = cls.replace('\\', '\\\\')  # Escape backslashes first
+                    escaped_cls = escaped_cls.replace('[', '\\[')
+                    escaped_cls = escaped_cls.replace(']', '\\]')
+                    escaped_cls = escaped_cls.replace('(', '\\(')
+                    escaped_cls = escaped_cls.replace(')', '\\)')
+                    escaped_cls = escaped_cls.replace('{', '\\{')
+                    escaped_cls = escaped_cls.replace('}', '\\}')
+                    escaped_cls = escaped_cls.replace(':', '\\:')
+                    escaped_cls = escaped_cls.replace(';', '\\;')
+                    escaped_cls = escaped_cls.replace(',', '\\,')
+                    escaped_cls = escaped_cls.replace('.', '\\.')
+                    escaped_cls = escaped_cls.replace('!', '\\!')
+                    escaped_cls = escaped_cls.replace('@', '\\@')
+                    escaped_cls = escaped_cls.replace('#', '\\#')
+                    escaped_cls = escaped_cls.replace('$', '\\$')
+                    escaped_cls = escaped_cls.replace('%', '\\%')
+                    escaped_cls = escaped_cls.replace('^', '\\^')
+                    escaped_cls = escaped_cls.replace('&', '\\&')
+                    escaped_cls = escaped_cls.replace('*', '\\*')
+                    escaped_cls = escaped_cls.replace('+', '\\+')
+                    escaped_cls = escaped_cls.replace('=', '\\=')
+                    escaped_cls = escaped_cls.replace('|', '\\|')
+                    escaped_cls = escaped_cls.replace('/', '\\/')
+                    escaped_cls = escaped_cls.replace('~', '\\~')
+                    escaped_cls = escaped_cls.replace('`', '\\`')
+                    escaped_cls = escaped_cls.replace('"', '\\"')
+                    escaped_cls = escaped_cls.replace("'", "\\'")
+                    escaped_cls = escaped_cls.replace('<', '\\<')
+                    escaped_cls = escaped_cls.replace('>', '\\>')
+                    escaped_cls = escaped_cls.replace('?', '\\?')
+                    escaped_cls = escaped_cls.replace(' ', '\\ ')  # Escape spaces
                     escaped_classes.append(f".{escaped_cls}")
                 selector_parts.extend(escaped_classes)
 
@@ -140,16 +171,44 @@ async def take_section_screenshot_by_selector(url, output_path, section_id, sect
                 bounding_box = await element.bounding_box()
                 if bounding_box:
                     logger.info(f"Found element with bounding box: {bounding_box}")
-                    # Take screenshot with clip parameter
-                    await page.screenshot(
-                        path=output_path,
-                        clip={
-                            "x": bounding_box["x"],
-                            "y": bounding_box["y"],
-                            "width": bounding_box["width"],
-                            "height": bounding_box["height"]
-                        }
-                    )
+
+                    # Get page dimensions for validation
+                    page_size = await page.evaluate("() => ({ width: window.innerWidth, height: window.innerHeight })")
+                    page_content_size = await page.evaluate("() => ({ width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight })")
+                    logger.info(f"Page viewport: {page_size}, content size: {page_content_size}")
+
+                    # Check if element is in viewport, if not scroll to it
+                    if bounding_box["y"] > page_size["height"]:
+                        logger.info(f"Element is below viewport, scrolling to it")
+                        await element.scroll_into_view_if_needed()
+                        # Wait a bit for scroll to complete
+                        await page.wait_for_timeout(500)
+                        # Get updated bounding box after scroll
+                        bounding_box = await element.bounding_box()
+                        logger.info(f"Updated bounding box after scroll: {bounding_box}")
+
+                    # Validate clip area is within reasonable bounds
+                    if (bounding_box["width"] > 0 and bounding_box["height"] > 0 and
+                        bounding_box["x"] >= 0 and bounding_box["y"] >= 0):
+                        try:
+                            # Take screenshot with clip parameter
+                            await page.screenshot(
+                                path=output_path,
+                                clip={
+                                    "x": bounding_box["x"],
+                                    "y": bounding_box["y"],
+                                    "width": bounding_box["width"],
+                                    "height": bounding_box["height"]
+                                }
+                            )
+                        except Exception as clip_error:
+                            logger.warning(f"Clip screenshot failed: {clip_error}, trying element screenshot")
+                            # Fallback to element screenshot
+                            await element.screenshot(path=output_path)
+                    else:
+                        logger.warning(f"Invalid bounding box: {bounding_box}, taking element screenshot")
+                        # Fallback to element screenshot
+                        await element.screenshot(path=output_path)
                 else:
                     logger.warning("Element found but no bounding box, taking full page screenshot")
                     # Fallback to full page screenshot

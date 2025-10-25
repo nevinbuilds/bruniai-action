@@ -92,9 +92,9 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                 5. Note if the section animates or moves. This is important as it should probably be ignored.
                 6. Generate a unique, descriptive ID for each section (e.g., "hero-section", "features-section", "footer-section")
                 7. **CRITICAL**: For each section, identify the HTML element that represents it. Use the provided real DOM structure information to get accurate attributes:
-                   - HTML tag names (section, div, header, footer, main, nav, aside, article)
-                   - ID attributes (e.g., id="hero", id="navigation") - use "none" if no ID
-                   - Class names - Use the REAL class names from the DOM structure provided below. Do not guess or assume.
+                   - HTML tag names (section, div, header, footer, main, nav, aside, article) - provide ONLY the tag name without backticks
+                   - ID attributes (e.g., id="hero", id="navigation") - use "none" if no ID - provide ONLY the ID value without backticks
+                   - Class names - Use the REAL class names from the DOM structure provided below. Do not guess or assume. Provide ONLY the class names without backticks
                    - Data attributes (e.g., data-section="hero")
                    - ARIA labels or roles
                    - Make sure to decide on the element that best represents the start of the section (and will end at the beginning of the next section)
@@ -113,9 +113,9 @@ async def analyze_sections_side_by_side(mcp_server, base_url, preview_url):
                    - Key Elements: [list]
                    - Visual Patterns: [description]
                    - Animation: [description]
-                   - HTML Element: [tag name, e.g., "section", "div", "header"]
-                   - HTML ID: [id attribute if present, or "none"]
-                   - HTML Classes: [class names if present, or "none"]
+                   - HTML Element: [tag name, e.g., section, div, header - NO backticks and not caps locked]
+                   - HTML ID: [id attribute if present, or "none" - NO backticks and not caps locked]
+                   - HTML Classes: [class names if present, or "none" - NO backticks and not caps locked]
                    - ARIA Label: [aria-label if present, or "none"]
                    - Content Identifier: [first few words of content for matching]
 

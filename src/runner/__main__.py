@@ -186,6 +186,8 @@ async def main():
 
                 # Capture section screenshots for both base and PR URLs
                 section_screenshots = {}
+                # Calculate page_suffix for this specific page
+                page_suffix = page_result['page_path'].replace('/', '_').replace('_', '') or 'home'
                 for section in sections_with_ids:
                     section_id = section['section_id']
 
