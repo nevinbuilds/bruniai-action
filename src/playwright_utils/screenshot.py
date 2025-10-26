@@ -187,28 +187,8 @@ async def take_section_screenshot_by_selector(url, output_path, section_id, sect
                         bounding_box = await element.bounding_box()
                         logger.info(f"Updated bounding box after scroll: {bounding_box}")
 
-                    # Validate clip area is within reasonable bounds
-                    if (bounding_box["width"] > 0 and bounding_box["height"] > 0 and
-                        bounding_box["x"] >= 0 and bounding_box["y"] >= 0):
-                        try:
-                            # Take screenshot with clip parameter
-                            await page.screenshot(
-                                path=output_path,
-                                clip={
-                                    "x": bounding_box["x"],
-                                    "y": bounding_box["y"],
-                                    "width": bounding_box["width"],
-                                    "height": bounding_box["height"]
-                                }
-                            )
-                        except Exception as clip_error:
-                            logger.warning(f"Clip screenshot failed: {clip_error}, trying element screenshot")
-                            # Fallback to element screenshot
-                            await element.screenshot(path=output_path)
-                    else:
-                        logger.warning(f"Invalid bounding box: {bounding_box}, taking element screenshot")
-                        # Fallback to element screenshot
-                        await element.screenshot(path=output_path)
+                    # Take screenshot of the element directly (captures full element regardless of viewport)
+                    await element.screenshot(path=output_path)
                 else:
                     logger.warning("Element found but no bounding box, taking full page screenshot")
                     # Fallback to full page screenshot
