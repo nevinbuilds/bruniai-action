@@ -13,7 +13,7 @@ import base64
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # Import from our modules
-from playwright_utils.screenshot import take_screenshot_with_playwright
+from playwright_utils.screenshot import take_screenshot_with_playwright, take_section_screenshot_with_playwright, take_section_screenshot_by_selector
 from playwright_utils.bounding_boxes import extract_section_bounding_boxes
 from github.pr_comments import post_pr_comment, format_visual_analysis_to_markdown
 from image_processing.diff import generate_diff_image
@@ -180,6 +180,47 @@ async def main():
                 # First get the sections analysis
                 sections_analysis = await analyze_sections_side_by_side(mcp_server, page_result['base_url'], page_result['pr_url'])
 
+                # Extract section bounding boxes with section IDs from analysis
+                sections_with_ids = await extract_section_bounding_boxes(page_result['base_url'], sections_analysis=sections_analysis)
+                logger.info(f"Extracted {len(sections_with_ids)} sections with IDs from {page_result['base_url']}")
+
+                # Capture section screenshots for both base and PR URLs
+                section_screenshots = {}
+                # Calculate page_suffix for this specific page
+                page_suffix = page_result['page_path'].replace('/', '_').replace('_', '') or 'home'
+                for section in sections_with_ids:
+                    section_id = section['section_id']
+
+                    # Define section screenshot paths
+                    base_section_screenshot = os.path.join(images_dir, f"base_screenshot_{page_suffix}_section_{section_id}.png")
+                    pr_section_screenshot = os.path.join(images_dir, f"pr_screenshot_{page_suffix}_section_{section_id}.png")
+
+                    # Take section screenshots using section IDs and analysis data
+                    base_section_success = await take_section_screenshot_by_selector(
+                        page_result['base_url'],
+                        base_section_screenshot,
+                        section_id,
+                        sections_analysis
+                    )
+                    pr_section_success = await take_section_screenshot_by_selector(
+                        page_result['pr_url'],
+                        pr_section_screenshot,
+                        section_id,
+                        sections_analysis
+                    )
+
+                    if base_section_success and pr_section_success:
+                        section_screenshots[section_id] = {
+                            'base': base_section_screenshot,
+                            'pr': pr_section_screenshot
+                        }
+                        logger.info(f"Captured section screenshots for {section_id}")
+                    else:
+                        logger.warning(f"Failed to capture section screenshots for {section_id}")
+
+                # Store section screenshots in page result
+                page_result['section_screenshots'] = section_screenshots
+
                 # Then perform visual analysis with the sections information
                 visual_analysis = await analyze_images_with_vision(
                     page_result['base_screenshot'],
@@ -247,6 +288,16 @@ async def main():
                             "pr_screenshot": encode_image(page_result['pr_screenshot']),
                             "diff_image": encode_image(page_result['diff_output_path'])
                         }
+
+                        # Add section screenshots if available
+                        if 'section_screenshots' in page_result and page_result['section_screenshots']:
+                            section_screenshots_encoded = {}
+                            for section_id, screenshots in page_result['section_screenshots'].items():
+                                section_screenshots_encoded[section_id] = {
+                                    'base': encode_image(screenshots['base']),
+                                    'pr': encode_image(screenshots['pr'])
+                                }
+                            image_refs['section_screenshots'] = section_screenshots_encoded
 
                         # Create page result with all necessary data
                         page_results.append({

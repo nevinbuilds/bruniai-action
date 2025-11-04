@@ -55,18 +55,20 @@ def test_section_info_structure():
     section = SectionInfo(
         name="Test Section",
         status="pass",
-        description="Test Description"
+        description="Test Description",
+        section_id="test-section-id"
     )
     assert section["name"] == "Test Section"
     assert section["status"] == "pass"
     assert section["description"] == "Test Description"
+    assert section["section_id"] == "test-section-id"
 
     # Test with missing fields (should work but be incomplete)
     incomplete_section = SectionInfo({})
     assert "name" not in incomplete_section
     assert "status" not in incomplete_section
     assert "description" not in incomplete_section
-
+    assert "section_id" not in incomplete_section
 def test_critical_issues_structure():
     """Test CriticalIssues structure."""
     # Test with all fields
@@ -75,14 +77,15 @@ def test_critical_issues_structure():
             SectionInfo(
                 name="Test Section",
                 status="pass",
-                description="Test Description"
+                description="Test Description",
+                section_id="test-section-id"
             )
         ],
         summary="Test Summary"
     )
     assert len(issues["sections"]) == 1
     assert issues["summary"] == "Test Summary"
-
+    assert issues["sections"][0]["section_id"] == "test-section-id"
     # Test with missing fields (should work but be incomplete)
     incomplete_issues = CriticalIssues({})
     assert "sections" not in incomplete_issues

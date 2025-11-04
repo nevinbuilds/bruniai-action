@@ -19,9 +19,21 @@ from src.analysis.sections import analyze_sections_side_by_side
 
 @pytest.mark.asyncio
 async def test_analyze_sections_side_by_side_retries_on_timeout():
+    # Mock extract_real_dom_info to avoid Playwright calls
+    mock_dom_info = [{
+        "tag": "section",
+        "id": "hero",
+        "className": "hero-section",
+        "ariaLabel": "Hero section",
+        "textContent": "Welcome",
+        "boundingBox": {"x": 0, "y": 0, "width": 100, "height": 100}
+    }]
+
     # Patch Runner.run to always raise TimeoutError
-    with patch("src.analysis.sections.Runner.run", new_callable=AsyncMock) as mock_run, \
+    with patch("src.analysis.sections.extract_real_dom_info", new_callable=AsyncMock) as mock_extract, \
+         patch("src.analysis.sections.Runner.run", new_callable=AsyncMock) as mock_run, \
          patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        mock_extract.return_value = mock_dom_info
         mock_run.side_effect = asyncio.TimeoutError
         mcp_server = "dummy_server"
         base_url = "http://example.com"
