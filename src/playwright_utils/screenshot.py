@@ -3,6 +3,7 @@ import logging
 import asyncio
 from playwright.async_api import async_playwright
 from .bounding_boxes import parse_section_data_from_analysis
+from .css_utils import build_css_selector
 
 logger = logging.getLogger("agent-runner")
 
@@ -100,64 +101,13 @@ async def take_section_screenshot_by_selector(url, output_path, section_id, sect
             page = await browser.new_page()
             await page.goto(url, wait_until="networkidle", timeout=60000)
 
-            # Build selector by combining element tag, ID, and classes for maximum specificity
-            selector_parts = []
-
-            # Start with the HTML element tag
-            if target_section.get('html_element'):
-                selector_parts.append(target_section['html_element'])
-            else:
-                # Fallback to generic section tags
-                selector_parts.append("section,header,footer,main,nav,aside,article")
-
-            # Add HTML ID if available (most specific)
-            if target_section.get('html_id'):
-                selector_parts.append(f"#{target_section['html_id']}")
-
-            # Add ALL HTML classes for maximum specificity
-            if target_section.get('html_classes'):
-                classes = target_section['html_classes'].split()
-                # Escape special characters in class names for valid CSS selectors
-                escaped_classes = []
-                for cls in classes:
-                    # Properly escape CSS selector special characters
-                    # Escape: [ ] ( ) { } : ; , . ! @ # $ % ^ & * + = | \ / ~ ` " ' < > ? space
-                    escaped_cls = cls.replace('\\', '\\\\')  # Escape backslashes first
-                    escaped_cls = escaped_cls.replace('[', '\\[')
-                    escaped_cls = escaped_cls.replace(']', '\\]')
-                    escaped_cls = escaped_cls.replace('(', '\\(')
-                    escaped_cls = escaped_cls.replace(')', '\\)')
-                    escaped_cls = escaped_cls.replace('{', '\\{')
-                    escaped_cls = escaped_cls.replace('}', '\\}')
-                    escaped_cls = escaped_cls.replace(':', '\\:')
-                    escaped_cls = escaped_cls.replace(';', '\\;')
-                    escaped_cls = escaped_cls.replace(',', '\\,')
-                    escaped_cls = escaped_cls.replace('.', '\\.')
-                    escaped_cls = escaped_cls.replace('!', '\\!')
-                    escaped_cls = escaped_cls.replace('@', '\\@')
-                    escaped_cls = escaped_cls.replace('#', '\\#')
-                    escaped_cls = escaped_cls.replace('$', '\\$')
-                    escaped_cls = escaped_cls.replace('%', '\\%')
-                    escaped_cls = escaped_cls.replace('^', '\\^')
-                    escaped_cls = escaped_cls.replace('&', '\\&')
-                    escaped_cls = escaped_cls.replace('*', '\\*')
-                    escaped_cls = escaped_cls.replace('+', '\\+')
-                    escaped_cls = escaped_cls.replace('=', '\\=')
-                    escaped_cls = escaped_cls.replace('|', '\\|')
-                    escaped_cls = escaped_cls.replace('/', '\\/')
-                    escaped_cls = escaped_cls.replace('~', '\\~')
-                    escaped_cls = escaped_cls.replace('`', '\\`')
-                    escaped_cls = escaped_cls.replace('"', '\\"')
-                    escaped_cls = escaped_cls.replace("'", "\\'")
-                    escaped_cls = escaped_cls.replace('<', '\\<')
-                    escaped_cls = escaped_cls.replace('>', '\\>')
-                    escaped_cls = escaped_cls.replace('?', '\\?')
-                    escaped_cls = escaped_cls.replace(' ', '\\ ')  # Escape spaces
-                    escaped_classes.append(f".{escaped_cls}")
-                selector_parts.extend(escaped_classes)
-
-            # Combine all parts into a single selector
-            selector = ''.join(selector_parts)
+            # Build selector using the utility function.
+            selector = build_css_selector(
+                html_id=target_section.get('html_id'),
+                html_element=target_section.get('html_element'),
+                html_classes=target_section.get('html_classes'),
+                fallback_tags=["section", "header", "footer", "main", "nav", "aside", "article"]
+            )
             logger.info(f"Using combined selector: {selector}")
 
             # Find the element and get its bounding box
