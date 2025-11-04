@@ -187,6 +187,7 @@ async def analyze_images_with_vision(
                                     "name": "Section Name",
                                     "status": "Present" | "Missing",
                                     "description": "Description of the section and its expected location/content if missing"
+                                    "section_id": "section_id_will_be_filled"
                                 }}
                                 ...
                             ],

@@ -10,6 +10,7 @@ class SectionInfo(TypedDict):
     name: str
     status: str
     description: str
+    section_id: str
 
 class CriticalIssues(TypedDict):
     sections: List[SectionInfo]
