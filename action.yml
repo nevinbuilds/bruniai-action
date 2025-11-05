@@ -57,6 +57,7 @@ runs:
       run: |
         npx playwright install --with-deps chromium
         npx playwright install-deps chromium
+        python -m playwright install chromium
       shell: bash
 
     - name: Start MCP Server
