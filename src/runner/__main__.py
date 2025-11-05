@@ -7,7 +7,6 @@ import json
 from dotenv import load_dotenv
 import openai
 from openai import RateLimitError
-import base64
 
 # Add the src directory to the Python path so we can import our modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -16,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from playwright_utils.screenshot import take_screenshot_with_playwright, take_section_screenshot_with_playwright, take_section_screenshot_by_selector
 from playwright_utils.bounding_boxes import extract_section_bounding_boxes
 from github.pr_comments import post_pr_comment, format_visual_analysis_to_markdown
-from image_processing.diff import generate_diff_image
+from image_processing import generate_diff_image, encode_image_compressed
 from analysis.vision import analyze_images_with_vision
 from analysis.sections import analyze_sections_side_by_side
 from core.mcp import managed_mcp_server
@@ -274,28 +273,55 @@ async def main():
             report_url = None
             if bruni_reporter:
                 try:
-                    # Encode images to base64
-                    def encode_image(image_path: str) -> str:
-                        with open(image_path, "rb") as image_file:
-                            return base64.b64encode(image_file.read()).decode('utf-8')
-
-                    # Prepare page results with image references
+                    # Prepare page results with image references.
                     page_results = []
+                    max_section_screenshots = int(os.getenv('BRUNI_MAX_SECTION_SCREENSHOTS', '6'))
+
                     for i, (page_analysis, page_result) in enumerate(zip(all_analyses, all_results)):
-                        # Create image references with base64 data
+                        # Create image references with compressed base64 data.
                         image_refs = {
-                            "base_screenshot": encode_image(page_result['base_screenshot']),
-                            "pr_screenshot": encode_image(page_result['pr_screenshot']),
-                            "diff_image": encode_image(page_result['diff_output_path'])
+                            "base_screenshot": encode_image_compressed(
+                                page_result['base_screenshot'],
+                                target_format='WEBP',
+                                max_dim=1200,
+                                quality=60
+                            ),
+                            "pr_screenshot": encode_image_compressed(
+                                page_result['pr_screenshot'],
+                                target_format='WEBP',
+                                max_dim=1200,
+                                quality=60
+                            ),
+                            "diff_image": encode_image_compressed(
+                                page_result['diff_output_path'],
+                                target_format='WEBP',
+                                max_dim=1200,
+                                quality=70
+                            )
                         }
 
-                        # Add section screenshots if available
+                        # Add section screenshots if available.
+                        # Limit the number to prevent payload from becoming too large.
                         if 'section_screenshots' in page_result and page_result['section_screenshots']:
                             section_screenshots_encoded = {}
-                            for section_id, screenshots in page_result['section_screenshots'].items():
+                            for idx, (section_id, screenshots) in enumerate(page_result['section_screenshots'].items()):
+                                if idx >= max_section_screenshots:
+                                    logger.info(f"Limiting section screenshots to {max_section_screenshots} to reduce payload size.")
+                                    break
+
                                 section_screenshots_encoded[section_id] = {
-                                    'base': encode_image(screenshots['base']),
-                                    'pr': encode_image(screenshots['pr'])
+                                    'base': encode_image_compressed(
+                                        screenshots['base'],
+                                        target_format='WEBP',
+                                        max_dim=1000,
+                                        quality=60
+                                    ),
+                                    'pr': encode_image_compressed(
+                                        screenshots['pr'],
+                                        target_format='WEBP',
+                                        max_dim=1000,
+                                        quality=60
+                                    )
                                 }
                             image_refs['section_screenshots'] = section_screenshots_encoded
 
