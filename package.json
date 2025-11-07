@@ -1,9 +1,14 @@
 {
-  "name": "playwright-mcp",
-  "version": "1.0.0",
+  "name": "bruniai",
+  "version": "0.1.0",
   "type": "module",
+  "description": "AI-powered visual regression testing tool",
+  "author": "Joao Garin",
+  "license": "MIT",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "tsx src-typescript/index.ts",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@playwright/mcp": "^0.0.13",
@@ -12,11 +17,7 @@
   "devDependencies": {
     "@playwright/test": "^1.51.1",
     "@types/node": "^20.11.24",
+    "tsx": "^4.7.0",
     "typescript": "^5.5.4"
-  },
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  }
 }
