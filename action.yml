@@ -45,6 +45,12 @@ runs:
         npm install
       shell: bash
 
+    - name: Build TypeScript
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm run build
+      shell: bash
+
     - name: Install Playwright
       working-directory: ${{ github.action_path }}
       run: |
