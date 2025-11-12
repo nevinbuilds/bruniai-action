@@ -1,6 +1,6 @@
 import { Stagehand } from "@browserbasehq/stagehand";
 import { z } from "zod/v3";
-import { extractRealDomInfo } from "./sectionDom";
+import { extractRealDomInfo } from "./sectionDom.js";
 
 interface Section {
   name: string;
@@ -43,7 +43,8 @@ const SectionAnalysisSchema = z.object({
 });
 
 /**
- * Analyze the base URL to identify its sections structure using Stagehand.
+ * Analyze the base URL to identify its sections structure using Stagehand's
+ * extract method.
  */
 export async function analyzeSectionsSideBySide(
   stagehand: Stagehand,
