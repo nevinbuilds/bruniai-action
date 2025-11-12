@@ -19,6 +19,7 @@ import {
   parseMultiPageAnalysisResults,
   encodeImageCompressed,
 } from "./reporter/index.js";
+import { ensureViewportSize } from "./utils/window.js";
 
 async function main() {
   // Parse command-line arguments
@@ -94,6 +95,10 @@ async function main() {
   // Initialize stagehand once before processing pages.
   await stagehand.init();
 
+  // Get the page and navigate to blank page first to ensure it's ready.
+  const initialPage = stagehand.context.pages()[0];
+  await ensureViewportSize(initialPage, "about:blank");
+
   // Store all analyses and page results for final summary and reporting
   const allAnalyses: Array<{
     page_path: string;
@@ -127,11 +132,10 @@ async function main() {
     let pageSuffix = page.replace(/\//g, "_");
     pageSuffix = pageSuffix === "_" ? "home" : pageSuffix;
 
-    const stagehandPage = stagehand.context.pages()[0];
+    // Ensure viewport is set correctly before navigating and taking screenshot.
+    await ensureViewportSize(initialPage, baseUrl);
 
-    await stagehandPage.goto(`${baseUrl}`);
-
-    const baseScreenshot = await stagehandPage.screenshot({
+    const baseScreenshot = await initialPage.screenshot({
       fullPage: true,
     });
 
@@ -140,8 +144,10 @@ async function main() {
       baseScreenshot
     );
 
-    await stagehandPage.goto(`${prUrl}`);
-    const prScreenshot = await stagehandPage.screenshot({
+    // Ensure viewport is set correctly before navigating to PR URL and taking screenshot.
+    await ensureViewportSize(initialPage, prUrl);
+
+    const prScreenshot = await initialPage.screenshot({
       fullPage: true,
     });
 
