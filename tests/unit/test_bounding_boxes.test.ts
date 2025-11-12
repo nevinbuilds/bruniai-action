@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { extractSectionBoundingBoxes } from "../../src-typescript/sections/sectionExtraction.js";
+import { extractSectionBoundingBoxes } from "../../src/sections/sectionExtraction.js";
 import { Stagehand } from "@browserbasehq/stagehand";
 
 describe("extractSectionBoundingBoxes error handling", () => {

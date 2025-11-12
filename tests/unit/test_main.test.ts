@@ -16,39 +16,39 @@ import { join } from "path";
 import { tmpdir } from "os";
 
 // Mock all dependencies before importing main
-vi.mock("../../src-typescript/github/pr-metadata.js", () => ({
+vi.mock("../../src/github/pr-metadata.js", () => ({
   fetchPrMetadata: vi.fn().mockResolvedValue({
     title: "Test PR",
     description: "Test body",
   }),
 }));
 
-vi.mock("../../src-typescript/github/pr-comments.js", () => ({
+vi.mock("../../src/github/pr-comments.js", () => ({
   getPrNumberFromEvent: vi.fn().mockResolvedValue(123),
   formatVisualAnalysisToMarkdown: vi.fn(),
   postPrComment: vi.fn(),
 }));
 
-vi.mock("../../src-typescript/diff/diff.js", () => ({
+vi.mock("../../src/diff/diff.js", () => ({
   generateDiffImage: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("../../src-typescript/sections/sectionExtraction.js", () => ({
+vi.mock("../../src/sections/sectionExtraction.js", () => ({
   extractSectionBoundingBoxes: vi.fn().mockResolvedValue([]),
   takeSectionScreenshot: vi.fn(),
 }));
 
-vi.mock("../../src-typescript/sections/sections.js", () => ({
+vi.mock("../../src/sections/sections.js", () => ({
   analyzeSectionsSideBySide: vi
     .fn()
     .mockResolvedValue("Test sections analysis"),
 }));
 
-vi.mock("../../src-typescript/vision/index.js", () => ({
+vi.mock("../../src/vision/index.js", () => ({
   analyzeImagesWithVision: vi.fn().mockResolvedValue({ status: "pass" }),
 }));
 
-vi.mock("../../src-typescript/reporter/index.js", () => ({
+vi.mock("../../src/reporter/index.js", () => ({
   BruniReporter: vi.fn().mockImplementation(() => ({
     sendMultiPageReport: vi.fn(),
   })),
@@ -56,7 +56,7 @@ vi.mock("../../src-typescript/reporter/index.js", () => ({
   encodeImageCompressed: vi.fn(),
 }));
 
-vi.mock("../../src-typescript/utils/window.js", () => ({
+vi.mock("../../src/utils/window.js", () => ({
   ensureViewportSize: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -83,7 +83,7 @@ vi.mock("@browserbasehq/stagehand", () => {
   };
 });
 
-vi.mock("../../src-typescript/args.js", () => ({
+vi.mock("../../src/args.js", () => ({
   parseArgs: vi.fn().mockReturnValue({
     baseUrl: "http://example.com",
     prUrl: "http://preview.com",
@@ -116,7 +116,7 @@ describe("main function", () => {
 
   it("should have parseArgs function available", async () => {
     // Test that parseArgs can be mocked and returns expected values
-    const { parseArgs } = await import("../../src-typescript/args.js");
+    const { parseArgs } = await import("../../src/args.js");
     const result = vi.mocked(parseArgs)();
     expect(result).toHaveProperty("baseUrl");
     expect(result).toHaveProperty("prUrl");
@@ -124,7 +124,7 @@ describe("main function", () => {
 
   it("should handle pages parameter parsing", async () => {
     // Test that pages parameter is parsed correctly
-    const { parseArgs } = await import("../../src-typescript/args.js");
+    const { parseArgs } = await import("../../src/args.js");
     vi.mocked(parseArgs).mockReturnValue({
       baseUrl: "http://example.com",
       prUrl: "http://preview.com",

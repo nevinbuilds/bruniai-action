@@ -19,11 +19,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { BruniReporter } from "../../src-typescript/reporter/reporter.js";
+import { BruniReporter } from "../../src/reporter/reporter.js";
 import type {
   MultiPageReportData,
   PageReport,
-} from "../../src-typescript/reporter/types.js";
+} from "../../src/reporter/types.js";
 
 // Mock fetch globally
 global.fetch = vi.fn();

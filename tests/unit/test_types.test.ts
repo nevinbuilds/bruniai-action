@@ -24,7 +24,7 @@ import type {
   VisualChanges,
   Conclusion,
   ImageReferences,
-} from "../../src-typescript/reporter/types.js";
+} from "../../src/reporter/types.js";
 
 describe("Type definitions", () => {
   describe("ReportStatus", () => {
@@ -55,7 +55,11 @@ describe("Type definitions", () => {
 
   describe("VisualChangesStatus", () => {
     it("should accept valid status values", () => {
-      const validStatuses: VisualChangesStatus[] = ["none", "minor", "significant"];
+      const validStatuses: VisualChangesStatus[] = [
+        "none",
+        "minor",
+        "significant",
+      ];
 
       for (const status of validStatuses) {
         expect(typeof status).toBe("string");
@@ -181,4 +185,3 @@ describe("Type definitions", () => {
     });
   });
 });
-

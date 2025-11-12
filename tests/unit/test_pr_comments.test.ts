@@ -19,7 +19,7 @@ import {
   postPrComment,
   getPrNumberFromEvent,
   formatVisualAnalysisToMarkdown,
-} from "../../src-typescript/github/pr-comments.js";
+} from "../../src/github/pr-comments.js";
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -30,7 +30,7 @@ vi.mock("fs/promises", () => ({
 }));
 
 // Mock auth module
-vi.mock("../../src-typescript/github/auth.js", () => ({
+vi.mock("../../src/github/auth.js", () => ({
   getGithubAppToken: vi.fn().mockReturnValue("fake_token"),
 }));
 
@@ -76,7 +76,9 @@ describe("PR comment functions", () => {
       ],
     };
 
-    await postPrComment(formatVisualAnalysisToMarkdown(testVisualAnalysis as any));
+    await postPrComment(
+      formatVisualAnalysisToMarkdown(testVisualAnalysis as any)
+    );
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
     // First call should be GET to fetch comments
@@ -144,7 +146,9 @@ describe("PR comment functions", () => {
     // Header reflects warning due to minor visual changes.
     expect(md).toContain("## ⚠️ Visual Testing Report — Warning");
     // Branding line.
-    expect(md).toContain("*1 page analyzed by [bruniai](https://www.brunivisual.com/)*");
+    expect(md).toContain(
+      "*1 page analyzed by [bruniai](https://www.brunivisual.com/)*"
+    );
     // Artifacts link.
     expect(md).toContain("[📦 View Artifacts](https://example.com/artifacts)");
     // Critical sections table and entries.
@@ -168,4 +172,3 @@ describe("PR comment functions", () => {
     expect(md).toContain("Reference Structure (click to expand)");
   });
 });
-

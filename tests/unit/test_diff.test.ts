@@ -19,7 +19,7 @@ import { mkdtemp, rm } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
 import sharp from "sharp";
-import { generateDiffImage } from "../../src-typescript/diff/diff.js";
+import { generateDiffImage } from "../../src/diff/diff.js";
 import { existsSync } from "fs";
 
 /**
@@ -128,7 +128,11 @@ describe("generateDiffImage", () => {
     const diff = join(tempDir, "diff.png");
 
     await createImage(before, { r: 0, g: 0, b: 0 }, { width: 10, height: 10 });
-    await createImage(after, { r: 255, g: 255, b: 255 }, { width: 20, height: 20 });
+    await createImage(
+      after,
+      { r: 255, g: 255, b: 255 },
+      { width: 20, height: 20 }
+    );
 
     await generateDiffImage(before, after, diff);
 
@@ -145,9 +149,7 @@ describe("generateDiffImage", () => {
 
     await createImage(after, { r: 0, g: 0, b: 0 });
 
-    await expect(
-      generateDiffImage(before, after, diff)
-    ).rejects.toThrow();
+    await expect(generateDiffImage(before, after, diff)).rejects.toThrow();
   });
 
   it("should throw error for invalid image file", async () => {
@@ -160,9 +162,6 @@ describe("generateDiffImage", () => {
     writeFileSync(before, "not an image");
     await createImage(after, { r: 0, g: 0, b: 0 });
 
-    await expect(
-      generateDiffImage(before, after, diff)
-    ).rejects.toThrow();
+    await expect(generateDiffImage(before, after, diff)).rejects.toThrow();
   });
 });
-

@@ -14,18 +14,18 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fetchPrMetadata } from "../../src-typescript/github/pr-metadata.js";
+import { fetchPrMetadata } from "../../src/github/pr-metadata.js";
 
 // Mock fetch globally
 global.fetch = vi.fn();
 
 // Mock auth module
-vi.mock("../../src-typescript/github/auth.js", () => ({
+vi.mock("../../src/github/auth.js", () => ({
   getGithubAppToken: vi.fn().mockReturnValue("fake_token"),
 }));
 
 // Mock pr-comments module
-vi.mock("../../src-typescript/github/pr-comments.js", () => ({
+vi.mock("../../src/github/pr-comments.js", () => ({
   getPrNumberFromEvent: vi.fn().mockResolvedValue(123),
 }));
 
@@ -61,4 +61,3 @@ describe("fetchPrMetadata", () => {
     );
   });
 });
-

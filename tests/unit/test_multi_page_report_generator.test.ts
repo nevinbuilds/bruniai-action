@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { parseMultiPageAnalysisResults } from "../../src-typescript/reporter/report-generator.js";
+import { parseMultiPageAnalysisResults } from "../../src/reporter/report-generator.js";
 
 describe("parseMultiPageAnalysisResults", () => {
   it("should return correct basic structure", () => {

@@ -13,11 +13,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { analyzeSectionsSideBySide } from "../../src-typescript/sections/sections.js";
+import { analyzeSectionsSideBySide } from "../../src/sections/sections.js";
 import { Stagehand } from "@browserbasehq/stagehand";
 
 // Mock extractRealDomInfo
-vi.mock("../../src-typescript/sections/sectionDom.js", () => ({
+vi.mock("../../src/sections/sectionDom.js", () => ({
   extractRealDomInfo: vi.fn().mockResolvedValue([
     {
       tag: "section",
