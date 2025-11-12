@@ -109,10 +109,8 @@ async function main() {
     console.log(extractedDescription);
     await stagehand.close();
 
-    // You could construct the analogous paths if you have an imagesDir:
-    // const baseScreenshot = path.join(imagesDir, `base_screenshot_${pageSuffix}.png`);
-    // const prScreenshot = path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`);
-    // const diffOutputPath = path.join(imagesDir, `diff_${pageSuffix}.png`);
+    // Signal to exit the action successfully.
+    process.exit(0);
   });
 }
 
