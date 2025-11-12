@@ -352,8 +352,25 @@ export async function takeSectionScreenshot(
     }
 
     const page = stagehand.context.pages()[0];
-    page.setViewportSize(1920, 5000);
+    // Set initial viewport with reasonable width, height will be calculated.
+    page.setViewportSize(1920, 1080);
     await page.goto(url, { waitUntil: "networkidle", timeoutMs: 60000 });
+
+    // Calculate the full page height to set viewport accordingly.
+    const fullPageHeight = await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const doc = (globalThis as any).document;
+      return Math.max(
+        doc.body.scrollHeight,
+        doc.body.offsetHeight,
+        doc.documentElement.clientHeight,
+        doc.documentElement.scrollHeight,
+        doc.documentElement.offsetHeight
+      );
+    });
+
+    // Set viewport to full page height for complete screenshot capture.
+    page.setViewportSize(1920, fullPageHeight);
 
     // Get bounding box by querying the DOM element.
     // First, try to find the element using available attributes.
