@@ -7,7 +7,15 @@ This document provides practical examples of how to use the Visual Regression Te
 ### Running a Simple Comparison
 
 ```bash
-python3 -m src.runner \
+node dist/index.js \
+  --base-url https://www.example.com \
+  --pr-url https://pr-example.com
+```
+
+Or for development:
+
+```bash
+npm run dev -- \
   --base-url https://www.example.com \
   --pr-url https://pr-example.com
 ```
@@ -15,11 +23,13 @@ python3 -m src.runner \
 ### Testing Multiple Pages
 
 ```bash
-python3 -m src.runner \
+node dist/index.js \
   --base-url https://www.example.com \
   --pr-url https://pr-example.com \
-  --pages '["/", "/about", "/contact", "/pricing"]'
+  --pages "/,/about,/contact,/pricing"
 ```
+
+**Note**: When running locally, use comma-separated format for pages. In GitHub Actions, use JSON array format: `'["/", "/about", "/contact", "/pricing"]'`
 
 ## GitHub Actions Integration
 
@@ -35,14 +45,14 @@ jobs:
   visual-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run Visual Regression Test
         uses: ./
         with:
           # Your production URL.
           base-url: "https://www.example.com/"
           # Update to your preview URL format.
-          pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
+          pr-url: "https://example-git-${{ github.head_ref }}-${{ github.actor }}.vercel.app"
 
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -60,12 +70,12 @@ jobs:
   visual-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run Visual Regression Test
         uses: ./
         with:
           base-url: "https://www.example.com/"
-          pr-url: "https://example-git-${{ steps.branch-name.outputs.branch_name }}-{{github.actor}}.vercel.app"
+          pr-url: "https://example-git-${{ github.head_ref }}-${{ github.actor }}.vercel.app"
           pages: '["/", "/about", "/contact", "/pricing"]'
 
         env:
@@ -79,7 +89,7 @@ jobs:
 Test specific components or sections of your website:
 
 ```bash
-python3 -m src.runner \
+node dist/index.js \
   --base-url https://www.example.com/components/button \
   --pr-url https://pr-example.com/components/button
 ```
@@ -89,7 +99,7 @@ python3 -m src.runner \
 Test your design system components:
 
 ```bash
-python3 -m src.runner \
+node dist/index.js \
   --base-url https://design.example.com \
   --pr-url https://pr-design.example.com
 ```
@@ -108,7 +118,7 @@ jobs:
   visual-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run Visual Regression Test
         uses: ./
         with:
@@ -134,7 +144,7 @@ jobs:
   visual-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run Visual Regression Test
         uses: ./
         with:

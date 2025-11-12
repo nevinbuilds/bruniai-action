@@ -6,84 +6,123 @@ This guide helps you resolve common issues that may arise while using the Visual
 
 ### 1. Installation Problems
 
-#### Issue: Python Virtual Environment Setup
+#### Issue: Node.js Version
 
 **Symptoms:**
 
-- Error when creating virtual environment
-- Package installation failures
+- Build errors
+- Runtime errors related to Node.js features
 
 **Solutions:**
 
-1. Ensure Python 3.10 is installed:
+1. Ensure Node.js 20 or higher is installed:
    ```bash
-   python3.10 --version
+   node --version
    ```
-2. Create virtual environment with explicit Python version:
+2. If using nvm, switch to Node.js 20:
    ```bash
-   python3.10 -m venv venv310
+   nvm install 20
+   nvm use 20
    ```
-3. Activate the environment:
-   ```bash
-   source venv310/bin/activate  # On Windows: venv310\Scripts\activate
-   ```
-
-#### Issue: Playwright MCP Installation
-
-**Symptoms:**
-
-- npm installation errors
-- MCP server not starting
-
-**Solutions:**
-
-1. Update npm:
+3. Update npm if needed:
    ```bash
    npm install -g npm@latest
    ```
-2. Clear npm cache:
+
+#### Issue: TypeScript Build Errors
+
+**Symptoms:**
+
+- Type errors during build
+- Module resolution errors
+
+**Solutions:**
+
+1. Clear node_modules and reinstall:
    ```bash
-   npm cache clean --force
+   rm -rf node_modules package-lock.json
+   npm install
    ```
-3. Reinstall MCP:
+2. Rebuild TypeScript:
    ```bash
-   npm uninstall -g @playwright/mcp
-   npm install -g @playwright/mcp
+   npm run build
    ```
+3. Check TypeScript version compatibility:
+   ```bash
+   npx tsc --version
+   ```
+
+#### Issue: Playwright Browser Installation
+
+**Symptoms:**
+
+- Playwright browser installation failures
+- Browser not found errors
+- Stagehand unable to launch browser
+
+**Solutions:**
+
+1. Install Playwright browsers (required by Stagehand):
+   ```bash
+   npx playwright install --with-deps chromium
+   ```
+2. If on Linux, ensure system dependencies are installed:
+   ```bash
+   npx playwright install-deps chromium
+   ```
+3. Note: The app uses Stagehand for browser automation, which requires Playwright browsers to be installed.
 
 ### 2. Runtime Issues
 
-#### Issue: MCP Server Connection
+#### Issue: Module Not Found Errors
 
 **Symptoms:**
 
-- Connection refused errors
-- Server not responding
+- `Cannot find module` errors
+- Import errors
 
 **Solutions:**
 
-1. Check if port 8931 is available:
+1. Ensure the project is built:
    ```bash
-   lsof -i :8931
+   npm run build
    ```
-2. Try a different port:
-   ```bash
-   npx @playwright/mcp@latest --port 8932
-   ```
-3. Ensure no firewall blocking the port
+2. Check that you're running from the correct directory
+3. Verify dist/ directory exists and contains compiled files
 
-#### Issue: Status Updates
+#### Issue: Environment Variables Not Loaded
 
 **Symptoms:**
 
-- Missing status updates
-- Incorrect status reporting
+- Missing API key errors
+- Configuration not found
 
 **Solutions:**
 
-1. Check GitHub token scope
-2. Verify workflow permissions
-3. Review status update configuration
+1. Ensure `.env` file exists in the root directory
+2. Check that `.env` contains required variables:
+   ```
+   OPENAI_API_KEY=your_key_here
+   GITHUB_TOKEN=your_token_here
+   ```
+3. Verify environment variables are set when running:
+   ```bash
+   echo $OPENAI_API_KEY
+   ```
+
+#### Issue: GitHub PR Comments Not Posting
+
+**Symptoms:**
+
+- Missing PR comments
+- Authentication errors
+
+**Solutions:**
+
+1. Verify `GITHUB_TOKEN` is set correctly
+2. Check token has `pull-requests: write` permission
+3. Ensure `GITHUB_REPOSITORY` environment variable is set (format: `owner/repo`)
+4. Verify PR number is accessible (check `PR_NUMBER` env var or GitHub event)
 
 ## Debugging Tips
 
@@ -92,12 +131,28 @@ This guide helps you resolve common issues that may arise while using the Visual
    - Review console output
    - Check error messages
    - Look for stack traces
+   - Enable verbose logging if available
 
 2. **Verify Environment**
    ```bash
-   python3 -c "import sys; print(sys.version)"
-   node --version
+   node --version  # Should be 20 or higher
    npm --version
+   npx tsc --version  # Check TypeScript version
+   ```
+
+3. **Run in Development Mode**
+
+   For more detailed error messages, run with TypeScript directly:
+   ```bash
+   npm run dev -- --base-url <url> --pr-url <url>
+   ```
+
+4. **Check Build Output**
+
+   Ensure the TypeScript build completed successfully:
+   ```bash
+   npm run build
+   ls -la dist/
    ```
 
 ## Getting Help

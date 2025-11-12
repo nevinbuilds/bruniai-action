@@ -1,22 +1,39 @@
 {
-  "name": "playwright-mcp",
-  "version": "1.0.0",
+  "name": "bruniai",
+  "version": "0.1.0",
   "type": "module",
+  "description": "AI-powered visual regression testing tool",
+  "author": "Joao Garin",
+  "license": "MIT",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@browserbasehq/stagehand": "^3.0.1",
     "@playwright/mcp": "^0.0.13",
-    "playwright": "^1.42.1"
+    "dotenv": "^16.0.0",
+    "pixelmatch": "^7.1.0",
+    "playwright": "^1.42.1",
+    "pngjs": "^7.0.0",
+    "sharp": "^0.34.5",
+    "uuid": "^10.0.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
     "@types/node": "^20.11.24",
-    "typescript": "^5.5.4"
-  },
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+    "@types/pixelmatch": "^5.2.6",
+    "@types/pngjs": "^6.0.5",
+    "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^4.0.8",
+    "@vitest/ui": "^4.0.8",
+    "tsx": "^4.7.0",
+    "typescript": "^5.5.4",
+    "vitest": "^4.0.8"
+  }
 }

@@ -1,11 +1,11 @@
 # Visual Regression Testing Documentation
 
-Welcome to the documentation for our Visual Regression Testing project. This project combines Playwright and OpenAI to provide automated visual regression testing for web applications.
+Welcome to the documentation for our Visual Regression Testing project. This TypeScript-based project uses Stagehand (AI-powered browser automation) and OpenAI to provide automated visual regression testing for web applications.
 
 ## Table of Contents
 
 1. [Getting Started](getting-started.md)
-2. [Architecture Overview](architecture.md)
+2. [Architecture Overview](architecture-diagram.md)
 3. [Configuration Guide](configuration.md)
 4. [Usage Examples](usage-examples.md)
 5. [Troubleshooting](troubleshooting.md)

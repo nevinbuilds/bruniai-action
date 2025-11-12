@@ -19,3 +19,8 @@ venv310/
 .DS_Store
 
 src/bruniai.egg-info
+
+# TypeScript/Bun build outputs
+dist/
+*.tsbuildinfo
+.bun/

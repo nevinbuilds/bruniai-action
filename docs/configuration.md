@@ -15,7 +15,13 @@ OPENAI_API_KEY=your_api_key_here
 The main script accepts the following arguments:
 
 ```bash
-python3 -m src.runner --base-url <production-url> --pr-url <pull-request-url>
+node dist/index.js --base-url <production-url> --pr-url <pull-request-url>
+```
+
+Or for development:
+
+```bash
+npm run dev -- --base-url <production-url> --pr-url <pull-request-url>
 ```
 
 ### Required Arguments
@@ -25,7 +31,9 @@ python3 -m src.runner --base-url <production-url> --pr-url <pull-request-url>
 
 ### Optional Arguments
 
-- `--pages`: JSON array of page paths to test (e.g., `["/", "/about", "/contact"]`). If not provided, only the homepage is tested.
+- `--pages`: Comma-separated list of page paths to test (e.g., `"/,/about,/contact"`). If not provided, only the homepage (`/`) is tested.
+- `--bruni-token`: Token for sending reports to Bruni API (optional)
+- `--bruni-api-url`: URL for the Bruni API endpoint (optional, defaults to `https://bruniai-app.vercel.app/api/tests`)
 
 ## GitHub Action Configuration
 
@@ -54,7 +62,7 @@ jobs:
 
 ### Multi-Page Testing
 
-To test multiple pages, add the `pages` parameter:
+To test multiple pages, add the `pages` parameter as a JSON array:
 
 ```yaml
 name: Visual Regression Test
@@ -66,7 +74,7 @@ jobs:
   visual-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run Visual Regression Test
         uses: ./
         with:
@@ -78,7 +86,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
-**Note**: When testing multiple pages, the Bruni API reporting is currently limited to single-page tests for backward compatibility.
+**Note**: The pages parameter accepts a JSON array string. When running locally, use comma-separated format: `"/,/about,/contact"`.
 
 ## Best Practices
 
