@@ -25,6 +25,9 @@ async function main() {
 
   const stagehand = new Stagehand({
     env: "LOCAL",
+    localBrowserLaunchOptions: {
+      headless: true,
+    },
   });
 
   await stagehand.init();
