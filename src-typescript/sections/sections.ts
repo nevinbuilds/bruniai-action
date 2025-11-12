@@ -87,33 +87,33 @@ export async function analyzeSectionsSideBySide(
 
       // Use Stagehand's extract method to analyze sections.
       const analysisPrompt = `Please analyze this base URL to establish our reference structure:
-Base URL: ${baseUrl}
+      Base URL: ${baseUrl}
 
-Focus on identifying all major sections and their characteristics. Make sure that the sections actually exist in the base URL,
-they should be well visible and only list the ones that are actually present. Don't register sections that are not present in the base URL.
+      Focus on identifying all major sections and their characteristics. Make sure that the sections actually exist in the base URL,
+      they should be well visible and only list the ones that are actually present. Don't register sections that are not present in the base URL.
 
-**CRITICAL**: Use the real DOM structure information provided below to get accurate class names and attributes. This information was extracted directly from the page using Playwright and contains the actual class names, IDs, and other attributes.
+      **CRITICAL**: Use the real DOM structure information provided below to get accurate class names and attributes. This information was extracted directly from the page using Playwright and contains the actual class names, IDs, and other attributes.
 
-${domSummary}
+      ${domSummary}
 
-For the base URL:
-1. List all major sections found. Make sure that the sections actually exist in the base URL and has some content (is not empty), they should be well visible, have content and has actual key elements in it.
-2. Note their position and structure
-3. Describe the purpose of each section
-4. Note any important visual elements or patterns
-5. Note if the section animates or moves. This is important as it should probably be ignored.
-6. Generate a unique, descriptive ID for each section (e.g., "hero-section", "features-section", "footer-section")
-7. **CRITICAL**: For each section, identify the HTML element that represents it. Use the provided real DOM structure information to get accurate attributes:
-   - HTML tag names (section, div, header, footer, main, nav, aside, article) - provide ONLY the tag name without backticks
-   - ID attributes (e.g., id="hero", id="navigation") - use "none" if no ID - provide ONLY the ID value without backticks
-   - Class names - Use the REAL class names from the DOM structure provided below. Do not guess or assume. Provide ONLY the class names without backticks
-   - Data attributes (e.g., data-section="hero")
-   - ARIA labels or roles
-   - Make sure to decide on the element that best represents the start of the section (and will end at the beginning of the next section)
+      For the base URL:
+      1. List all major sections found. Make sure that the sections actually exist in the base URL and has some content (is not empty), they should be well visible, have content and has actual key elements in it.
+      2. Note their position and structure
+      3. Describe the purpose of each section
+      4. Note any important visual elements or patterns
+      5. Note if the section animates or moves. This is important as it should probably be ignored.
+      6. Generate a unique, descriptive ID for each section (e.g., "hero-section", "features-section", "footer-section")
+      7. **CRITICAL**: For each section, identify the HTML element that represents it. Use the provided real DOM structure information to get accurate attributes:
+        - HTML tag names (section, div, header, footer, main, nav, aside, article) - provide ONLY the tag name without backticks
+        - ID attributes (e.g., id="hero", id="navigation") - use "none" if no ID - provide ONLY the ID value without backticks
+        - Class names - Use the REAL class names from the DOM structure provided below. Do not guess or assume. Provide ONLY the class names without backticks
+        - Data attributes (e.g., data-section="hero")
+        - ARIA labels or roles
+        - Make sure to decide on the element that best represents the start of the section (and will end at the beginning of the next section)
 
-   **IMPORTANT**: Use the real DOM structure information provided in the prompt to get accurate class names and attributes. The DOM structure below contains the actual extracted information from the page.
+        **IMPORTANT**: Use the real DOM structure information provided in the prompt to get accurate class names and attributes. The DOM structure below contains the actual extracted information from the page.
 
-This will serve as our baseline for comparing visual changes.`;
+      This will serve as our baseline for comparing visual changes.`;
 
       try {
         const sectionAnalysis = await Promise.race([

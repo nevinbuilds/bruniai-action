@@ -1,11 +1,14 @@
 import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
-import { z } from "zod/v3";
 import { fetchPrMetadata } from "./github/pr-metadata.js";
 import { getPrNumberFromEvent } from "./github/pr-comments.js";
 import { parseArgs } from "./args.js";
 import { generateDiffImage } from "./diff/diff.js";
 import { analyzeSectionsSideBySide } from "./sections/sections.js";
+import {
+  extractSectionBoundingBoxes,
+  takeSectionScreenshot,
+} from "./sections/sectionExtraction.js";
 
 async function main() {
   // Parse command-line arguments
@@ -61,7 +64,11 @@ async function main() {
     fs.mkdirSync(imagesDir, { recursive: true });
   }
 
-  pages.forEach(async (page) => {
+  // Initialize stagehand once before processing pages.
+  await stagehand.init();
+
+  // Process each page sequentially to avoid race conditions.
+  for (const page of pages) {
     console.log("Processing page ------ ", page);
 
     // Construct full URLs for this page
@@ -76,7 +83,6 @@ async function main() {
     let pageSuffix = page.replace(/\//g, "_");
     pageSuffix = pageSuffix === "_" ? "home" : pageSuffix;
 
-    await stagehand.init();
     const stagehandPage = stagehand.context.pages()[0];
 
     await stagehandPage.goto(`${baseUrl}`);
@@ -106,23 +112,76 @@ async function main() {
       path.join(imagesDir, `diff_${pageSuffix}.png`)
     );
 
-    await analyzeSectionsSideBySide(stagehand, baseUrl, prUrl);
-
-    // Act on the page
-    // await stagehand.act("Click the learn more button");
-
-    // Extract structured data
-    const extractedDescription = await stagehand.extract(
-      "Extract the main heading or title text visible on this page",
-      z.string()
+    // Analyze sections and get formatted analysis output.
+    const sectionsAnalysis = await analyzeSectionsSideBySide(
+      stagehand,
+      baseUrl,
+      prUrl
     );
 
-    console.log(extractedDescription);
-    await stagehand.close();
-  });
+    // Extract section bounding boxes with IDs from analysis.
+    const sectionsWithIds = await extractSectionBoundingBoxes(
+      stagehand,
+      baseUrl,
+      sectionsAnalysis
+    );
+    console.log(
+      `Extracted ${sectionsWithIds.length} sections with IDs from ${baseUrl}`
+    );
+
+    // Capture section screenshots for both base and PR URLs.
+    const sectionScreenshots: Record<string, { base: string; pr: string }> = {};
+    for (const section of sectionsWithIds) {
+      const sectionId = section.sectionId;
+
+      // Define section screenshot paths.
+      const baseSectionScreenshot = path.join(
+        imagesDir,
+        `base_screenshot_${pageSuffix}_section_${sectionId}.png`
+      );
+      const prSectionScreenshot = path.join(
+        imagesDir,
+        `pr_screenshot_${pageSuffix}_section_${sectionId}.png`
+      );
+
+      // Take section screenshots using section IDs and analysis data.
+      const baseSectionSuccess = await takeSectionScreenshot(
+        stagehand,
+        baseUrl,
+        baseSectionScreenshot,
+        sectionId,
+        sectionsAnalysis
+      );
+      const prSectionSuccess = await takeSectionScreenshot(
+        stagehand,
+        prUrl,
+        prSectionScreenshot,
+        sectionId,
+        sectionsAnalysis
+      );
+
+      if (baseSectionSuccess && prSectionSuccess) {
+        sectionScreenshots[sectionId] = {
+          base: baseSectionScreenshot,
+          pr: prSectionScreenshot,
+        };
+        console.log(`Captured section screenshots for ${sectionId}`);
+      } else {
+        console.warn(`Failed to capture section screenshots for ${sectionId}`);
+      }
+    }
+  }
+
+  // Close stagehand after all pages are processed.
+  await stagehand.close();
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    console.log("Done");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
