@@ -3,7 +3,7 @@ import { Stagehand } from "@browserbasehq/stagehand";
 import { z } from "zod/v3";
 import { fetchPrMetadata } from "./github/pr-metadata.js";
 import { getPrNumberFromEvent } from "./github/pr-comments.js";
-import { parseArgs } from "./args";
+import { parseArgs } from "./args.js";
 
 async function main() {
   // Parse command-line arguments
