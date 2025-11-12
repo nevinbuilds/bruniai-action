@@ -4,6 +4,7 @@ import { z } from "zod/v3";
 import { fetchPrMetadata } from "./github/pr-metadata.js";
 import { getPrNumberFromEvent } from "./github/pr-comments.js";
 import { parseArgs } from "./args.js";
+import { generateDiffImage } from "./diff/diff.js";
 
 async function main() {
   // Parse command-line arguments
@@ -95,6 +96,12 @@ async function main() {
     fs.writeFileSync(
       path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
       prScreenshot
+    );
+
+    await generateDiffImage(
+      path.join(imagesDir, `base_screenshot_${pageSuffix}.png`),
+      path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
+      path.join(imagesDir, `diff_${pageSuffix}.png`)
     );
 
     // Act on the page

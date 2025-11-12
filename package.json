@@ -14,11 +14,16 @@
     "@browserbasehq/stagehand": "^3.0.1",
     "@playwright/mcp": "^0.0.13",
     "dotenv": "^16.0.0",
-    "playwright": "^1.42.1"
+    "pixelmatch": "^7.1.0",
+    "playwright": "^1.42.1",
+    "pngjs": "^7.0.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
     "@types/node": "^20.11.24",
+    "@types/pixelmatch": "^5.2.6",
+    "@types/pngjs": "^6.0.5",
     "tsx": "^4.7.0",
     "typescript": "^5.5.4"
   }
