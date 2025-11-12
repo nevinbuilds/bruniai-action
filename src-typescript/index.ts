@@ -1,7 +1,11 @@
 import "dotenv/config";
 import { Stagehand } from "@browserbasehq/stagehand";
 import { fetchPrMetadata } from "./github/pr-metadata.js";
-import { getPrNumberFromEvent } from "./github/pr-comments.js";
+import {
+  getPrNumberFromEvent,
+  formatVisualAnalysisToMarkdown,
+  postPrComment,
+} from "./github/pr-comments.js";
 import { parseArgs } from "./args.js";
 import { generateDiffImage } from "./diff/diff.js";
 import { analyzeSectionsSideBySide } from "./sections/sections.js";
@@ -67,6 +71,13 @@ async function main() {
 
   // Initialize stagehand once before processing pages.
   await stagehand.init();
+
+  // Store all analyses for final summary
+  const allAnalyses: Array<{
+    page_path: string;
+    visual_analysis: Awaited<ReturnType<typeof analyzeImagesWithVision>>;
+    sections_analysis: string;
+  }> = [];
 
   // Process each page sequentially to avoid race conditions.
   for (const page of pages) {
@@ -187,10 +198,52 @@ async function main() {
     );
 
     console.log("Visual analysis completed:", visualAnalysis.status);
+
+    // Store the analysis results
+    allAnalyses.push({
+      page_path: page,
+      visual_analysis: visualAnalysis,
+      sections_analysis: sectionsAnalysis,
+    });
   }
 
   // Close stagehand after all pages are processed.
   await stagehand.close();
+
+  // Combine all analyses into a comprehensive report
+  let finalSummary =
+    "Information about visual testing analysis provided by [bruniai](https://www.brunivisual.com/)\n\n" +
+    `**Testing Summary**: ${allAnalyses.length} page${
+      allAnalyses.length !== 1 ? "s" : ""
+    } analyzed\n\n`;
+
+  for (let i = 0; i < allAnalyses.length; i++) {
+    const pageAnalysis = allAnalyses[i];
+    const pagePath = pageAnalysis.page_path;
+    const visualAnalysis = pageAnalysis.visual_analysis;
+    const sectionsAnalysis = pageAnalysis.sections_analysis;
+
+    // Format the visual analysis for this page
+    const formattedVisualAnalysis =
+      formatVisualAnalysisToMarkdown(visualAnalysis);
+
+    // Add page-specific section
+    const pageSummary =
+      `<details>\n` +
+      `<summary>Page ${i + 1}: ${pagePath}</summary>\n\n` +
+      `<details>\n` +
+      `<summary>Structural Analysis</summary>\n\n` +
+      `${sectionsAnalysis}\n` +
+      `</details>\n\n` +
+      `${formattedVisualAnalysis}\n` +
+      `</details>\n\n`;
+
+    finalSummary += pageSummary;
+  }
+
+  // Post to GitHub
+  await postPrComment(finalSummary);
+  console.log("Complete analysis has been logged above.");
 }
 
 main()
