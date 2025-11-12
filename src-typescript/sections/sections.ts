@@ -1,25 +1,6 @@
 import { Stagehand } from "@browserbasehq/stagehand";
 import { z } from "zod/v3";
-
-const logger = {
-  info: (message: string) => console.log(message),
-  warning: (message: string) => console.warn(message),
-  error: (message: string) => console.error(message),
-};
-
-interface DomElement {
-  tag: string;
-  id: string;
-  className: string;
-  ariaLabel: string;
-  textContent: string;
-  boundingBox: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-}
+import { extractRealDomInfo } from "./sectionDom";
 
 interface Section {
   name: string;
@@ -62,67 +43,6 @@ const SectionAnalysisSchema = z.object({
 });
 
 /**
- * Extract real DOM information using Stagehand's page directly.
- */
-async function extractRealDomInfo(
-  stagehand: Stagehand,
-  url: string
-): Promise<DomElement[]> {
-  try {
-    const page = stagehand.context.pages()[0];
-    await page.goto(url, { waitUntil: "networkidle", timeoutMs: 60000 });
-
-    // Extract real DOM information using evaluate.
-    // The code inside evaluate runs in the browser context where document is available.
-    const domInfo = await page.evaluate((): DomElement[] => {
-      const selector =
-        "section,header,footer,main,nav,aside,article,div[class*='section'],div[class*='hero'],div[class*='content'],div[class*='container']";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const nodes = (globalThis as any).document.querySelectorAll(selector);
-
-      return (
-        Array.from(nodes)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .map((node: any): DomElement | null => {
-            const rect = node.getBoundingClientRect();
-
-            // Skip elements that are too small or not visible.
-            if (rect.width < 50 || rect.height < 50) {
-              return null;
-            }
-
-            const nodeId = node.getAttribute("id") || "";
-            const nodeClass = node.getAttribute("class") || "";
-            const ariaLabel = node.getAttribute("aria-label") || "";
-            const tagName = node.tagName.toLowerCase();
-            const textContent = (node.textContent || "").substring(0, 100);
-
-            return {
-              tag: tagName,
-              id: nodeId,
-              className: nodeClass,
-              ariaLabel: ariaLabel,
-              textContent: textContent,
-              boundingBox: {
-                x: Math.round(rect.x),
-                y: Math.round(rect.y),
-                width: Math.round(rect.width),
-                height: Math.round(rect.height),
-              },
-            };
-          })
-          .filter((node): node is DomElement => node !== null)
-      );
-    });
-
-    return domInfo;
-  } catch (error) {
-    logger.error(`Error extracting DOM info: ${error}`);
-    return [];
-  }
-}
-
-/**
  * Analyze the base URL to identify its sections structure using Stagehand.
  */
 export async function analyzeSectionsSideBySide(
@@ -135,16 +55,16 @@ export async function analyzeSectionsSideBySide(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      logger.info(
+      console.log(
         `\n${"=".repeat(50)}\n🔍 Starting base URL section analysis (attempt ${
           attempt + 1
         }/${maxRetries})\n${"=".repeat(50)}`
       );
 
       // Extract real DOM information first.
-      logger.info("Extracting real DOM information using Stagehand...");
+      console.log("Extracting real DOM information using Stagehand...");
       const domInfo = await extractRealDomInfo(stagehand, baseUrl);
-      logger.info(`Found ${domInfo.length} DOM elements with real class names`);
+      console.log(`Found ${domInfo.length} DOM elements with real class names`);
 
       // Create a summary of the real DOM structure for the analysis.
       let domSummary = "Real DOM Structure:\n";
@@ -225,7 +145,7 @@ This will serve as our baseline for comparing visual changes.`;
           formattedOutput += `   - Content Identifier: ${section.contentIdentifier}\n\n`;
         });
 
-        logger.info(
+        console.log(
           `\n${"=".repeat(
             50
           )}\n🗺️ Base URL Section Analysis:\n${formattedOutput}\n${"=".repeat(
@@ -239,7 +159,7 @@ This will serve as our baseline for comparing visual changes.`;
           error.message === "Section analysis timed out"
         ) {
           if (attempt < maxRetries - 1) {
-            logger.warning(
+            console.warn(
               `Section analysis timed out. Retrying in ${
                 retryDelay / 1000
               } seconds...`
@@ -253,9 +173,9 @@ This will serve as our baseline for comparing visual changes.`;
         throw error;
       }
     } catch (error) {
-      logger.error(`Error during section analysis: ${error}`);
+      console.error(`Error during section analysis: ${error}`);
       if (attempt < maxRetries - 1) {
-        logger.warning(`Retrying in ${retryDelay / 1000} seconds...`);
+        console.warn(`Retrying in ${retryDelay / 1000} seconds...`);
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         continue;
       }
