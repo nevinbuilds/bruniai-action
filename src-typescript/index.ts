@@ -73,7 +73,7 @@ async function main() {
     // Define screenshot paths with page-specific names
     // Remove all slashes for file suffix, or use 'home' for root
     let pageSuffix = page.replace(/\//g, "_");
-    pageSuffix = pageSuffix === "" ? "home" : pageSuffix;
+    pageSuffix = pageSuffix === "_" ? "home" : pageSuffix;
 
     await stagehand.init();
     const stagehandPage = stagehand.context.pages()[0];
@@ -89,6 +89,7 @@ async function main() {
       baseScreenshot
     );
 
+    await stagehandPage.goto(`${prUrl}`);
     const prScreenshot = await stagehandPage.screenshot({
       fullPage: true,
     });
