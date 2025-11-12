@@ -5,6 +5,7 @@ import { fetchPrMetadata } from "./github/pr-metadata.js";
 import { getPrNumberFromEvent } from "./github/pr-comments.js";
 import { parseArgs } from "./args.js";
 import { generateDiffImage } from "./diff/diff.js";
+import { analyzeSectionsSideBySide } from "./sections/sections.js";
 
 async function main() {
   // Parse command-line arguments
@@ -104,6 +105,8 @@ async function main() {
       path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
       path.join(imagesDir, `diff_${pageSuffix}.png`)
     );
+
+    await analyzeSectionsSideBySide(stagehand, baseUrl, prUrl);
 
     // Act on the page
     // await stagehand.act("Click the learn more button");
