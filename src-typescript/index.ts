@@ -120,9 +120,6 @@ async function main() {
     console.log(extractedDescription);
     await stagehand.close();
   });
-
-  // Signal to exit the action successfully.
-  process.exit(0);
 }
 
 main().catch((err) => {
