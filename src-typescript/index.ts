@@ -109,7 +109,7 @@ async function main() {
 
     // Extract structured data
     const extractedDescription = await stagehand.extract(
-      "extract the description",
+      "Extract the main heading or title text visible on this page",
       z.string()
     );
 
