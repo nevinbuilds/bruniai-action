@@ -9,6 +9,7 @@ import {
   extractSectionBoundingBoxes,
   takeSectionScreenshot,
 } from "./sections/sectionExtraction.js";
+import { analyzeImagesWithVision } from "./vision/index.js";
 
 async function main() {
   // Parse command-line arguments
@@ -170,6 +171,22 @@ async function main() {
         console.warn(`Failed to capture section screenshots for ${sectionId}`);
       }
     }
+
+    // Perform visual analysis with the sections information
+    const visualAnalysis = await analyzeImagesWithVision(
+      path.join(imagesDir, `base_screenshot_${pageSuffix}.png`),
+      path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
+      path.join(imagesDir, `diff_${pageSuffix}.png`),
+      baseUrl,
+      prUrl,
+      prNumber?.toString() || "",
+      repo || "",
+      sectionsAnalysis,
+      title || undefined,
+      description || undefined
+    );
+
+    console.log("Visual analysis completed:", visualAnalysis.status);
   }
 
   // Close stagehand after all pages are processed.
