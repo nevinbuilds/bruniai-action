@@ -8,7 +8,7 @@
     "allowJs": true,
     "checkJs": false,
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -21,7 +21,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*", "tests/**/*.ts"],
-  "exclude": ["node_modules", "dist", "venv310", "htmlcov", "*.egg-info"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
 
