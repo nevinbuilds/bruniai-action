@@ -51,22 +51,69 @@ async function main() {
     },
   });
 
-  await stagehand.init();
-  const page = stagehand.context.pages()[0];
+  const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || process.cwd();
+  const path = await import("path");
+  const fs = await import("fs");
+  const imagesDir = path.join(GITHUB_WORKSPACE, "images");
+  if (!fs.existsSync(imagesDir)) {
+    fs.mkdirSync(imagesDir, { recursive: true });
+  }
 
-  await page.goto("https://example.com");
+  pages.forEach(async (page) => {
+    console.log("Processing page ------ ", page);
 
-  // Act on the page
-  await stagehand.act("Click the learn more button");
+    // Construct full URLs for this page
+    const baseUrl = args.baseUrl!.replace(/\/$/, "") + page;
+    const prUrl = args.prUrl!.replace(/\/$/, "") + page;
 
-  // Extract structured data
-  const extractedDescription = await stagehand.extract(
-    "extract the description",
-    z.string()
-  );
+    console.log(`Base URL: ${baseUrl}`);
+    console.log(`PR URL: ${prUrl}`);
 
-  console.log(extractedDescription);
-  await stagehand.close();
+    // Define screenshot paths with page-specific names
+    // Remove all slashes for file suffix, or use 'home' for root
+    let pageSuffix = page.replace(/\//g, "_");
+    pageSuffix = pageSuffix === "" ? "home" : pageSuffix;
+
+    await stagehand.init();
+    const stagehandPage = stagehand.context.pages()[0];
+
+    await stagehandPage.goto(`${baseUrl}`);
+
+    const baseScreenshot = await stagehandPage.screenshot({
+      fullPage: true,
+    });
+
+    fs.writeFileSync(
+      path.join(imagesDir, `base_screenshot_${pageSuffix}.png`),
+      baseScreenshot
+    );
+
+    const prScreenshot = await stagehandPage.screenshot({
+      fullPage: true,
+    });
+
+    fs.writeFileSync(
+      path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
+      prScreenshot
+    );
+
+    // Act on the page
+    await stagehand.act("Click the learn more button");
+
+    // Extract structured data
+    const extractedDescription = await stagehand.extract(
+      "extract the description",
+      z.string()
+    );
+
+    console.log(extractedDescription);
+    await stagehand.close();
+
+    // You could construct the analogous paths if you have an imagesDir:
+    // const baseScreenshot = path.join(imagesDir, `base_screenshot_${pageSuffix}.png`);
+    // const prScreenshot = path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`);
+    // const diffOutputPath = path.join(imagesDir, `diff_${pageSuffix}.png`);
+  });
 }
 
 main().catch((err) => {
