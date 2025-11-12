@@ -4,47 +4,61 @@ Follow these steps to run the test suite locally.
 
 ## Prerequisites
 
-- Python 3.10 (or use the bundled virtualenv `venv310`).
-- macOS/Linux shell commands shown; adapt as needed for Windows.
+- Node.js 20 or higher
+- npm (comes with Node.js)
+- macOS/Linux shell commands shown; adapt as needed for Windows
 
-## Option A: Use the bundled virtual environment
+## Running Tests
+
+### Run All Tests
 
 ```bash
 # From repo root
-source venv310/bin/activate
-
-# Ensure package is installed for imports like `src.*`
-pip install -e .
-
-# Run all tests
-PYTHONPATH=$PWD pytest -q
-
-# Run a specific test file
-PYTHONPATH=$PWD pytest -q tests/unit/test_pr_comments.py
-
-# Run by keyword
-PYTHONPATH=$PWD pytest -q -k pr_comments
+npm test
 ```
 
-## Option B: Create a fresh virtual environment
+### Run Tests in Watch Mode
 
 ```bash
-# From repo root
-python3 -m venv .venv
-source .venv/bin/activate
+npm test -- --watch
+```
 
-pip install -U pip
-pip install -r requirements-dev.txt
-pip install -e .
+### Run Tests with UI
 
-PYTHONPATH=$PWD pytest -q
+```bash
+npm run test:ui
+```
+
+This opens an interactive test UI in your browser.
+
+### Run Tests with Coverage
+
+```bash
+npm run test:coverage
+```
+
+Coverage reports will be generated in the `coverage/` directory.
+
+### Run Specific Test Files
+
+```bash
+# Run a specific test file
+npm test -- tests/unit/test_main.test.ts
+
+# Run tests matching a pattern
+npm test -- -t "pr comments"
+```
+
+### Run Tests in Verbose Mode
+
+```bash
+npm test -- --reporter=verbose
 ```
 
 ## Notes
 
-- If you see `ModuleNotFoundError: No module named 'src'`, ensure you:
-  - Installed the package in editable mode: `pip install -e .`, and
-  - Set `PYTHONPATH=$PWD` when running pytest.
-- To stop on first failure, add `-x`.
-- To increase verbosity, omit `-q` or add `-vv`.
-- Coverage is configured via `pytest.ini`; you can add `--cov` flags if desired.
+- Tests use Vitest as the test runner
+- TypeScript files are automatically transpiled during test execution
+- To stop on first failure, add `--bail` flag: `npm test -- --bail`
+- To increase verbosity, use `--reporter=verbose` or `--reporter=dot`
+- Coverage is configured via `vitest.config.ts`

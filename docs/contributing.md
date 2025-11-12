@@ -12,32 +12,41 @@ Thank you for your interest in contributing to the Visual Regression Testing pro
 2. **Set Up Development Environment**
 
    ```bash
-   # Create and activate virtual environment
-   python3.10 -m venv venv310
-   source venv310/bin/activate  # On Windows: venv310\Scripts\activate
-
    # Install dependencies
-   pip install -r requirements.txt
-   pip install -r requirements-dev.txt
+   npm install
 
-   # Install Playwright MCP
-   npm install -g @playwright/mcp
+   # Build TypeScript
+   npm run build
+
+   # Install Playwright browsers (required by Stagehand)
+   npx playwright install --with-deps chromium
    ```
 
 3. **Run Tests**
    ```bash
-   pytest tests/
+   # Run all tests
+   npm test
+
+   # Run tests in watch mode
+   npm test -- --watch
+
+   # Run tests with UI
+   npm run test:ui
+
+   # Run tests with coverage
+   npm run test:coverage
    ```
 
 ## Contribution Guidelines
 
 ### Code Style
 
-- Follow PEP 8 for Python code
+- Follow TypeScript best practices and ESLint rules (if configured)
 - Use meaningful variable and function names
-- Add docstrings for all public functions
+- Add JSDoc comments for all public functions and classes
 - Keep functions focused and small
-- Write unit tests for new features
+- Write unit tests for new features using Vitest
+- Use TypeScript types and interfaces for better type safety
 
 ### Git Workflow
 

@@ -1,39 +1,35 @@
 # BruniAI Workflow Diagrams
 
-## Current Python Workflow (Sequential)
+## TypeScript Application Workflow
 
 ```mermaid
 graph TD
-    A[GitHub Action Trigger] --> B[Setup Environment]
-    B --> C[Start MCP Server]
-    C --> D[Fetch PR Metadata]
-    D --> E{For Each Page}
-    E --> F[Take Base Screenshot]
-    F --> G[Take PR Screenshot]
-    G --> H[Extract Section Bounding Boxes]
-    H --> I[Generate Diff Image]
-    I --> J[Store Page Result]
-    J --> K{More Pages?}
-    K -->|Yes| E
-    K -->|No| L[Connect to MCP Server]
-    L --> M{For Each Page Result}
-    M --> N[Analyze Sections with MCP]
-    N --> O[Extract Sections with IDs]
-    O --> P[Capture Section Screenshots]
-    P --> Q[Analyze Visual with GPT-4]
-    Q --> R[Store Page Analysis]
-    R --> S{More Pages?}
-    S -->|Yes| M
-    S -->|No| T[Generate Multi-Page Report]
-    T --> U{Bruni Token?}
-    U -->|Yes| V[Send Report to Bruni API]
-    U -->|No| W[Post PR Comment]
-    V --> W
-    W --> X[Stop MCP Server]
-    X --> Y[End]
+    A[GitHub Action Trigger] --> B[Setup Node.js & Install Dependencies]
+    B --> C[Build TypeScript]
+    C --> D[Install Playwright Browsers for Stagehand]
+    D --> E[Initialize Stagehand]
+    E --> F[Fetch PR Metadata]
+    F --> G{For Each Page}
+    G --> H[Take Base Screenshot]
+    H --> I[Take PR Screenshot]
+    I --> J[Generate Diff Image]
+    J --> K[Analyze Sections]
+    K --> L[Extract Section Bounding Boxes]
+    L --> M[Capture Section Screenshots]
+    M --> N[Analyze Visual with GPT-4 Vision]
+    N --> O[Store Page Analysis]
+    O --> P{More Pages?}
+    P -->|Yes| G
+    P -->|No| Q[Generate Multi-Page Report]
+    Q --> R{Bruni Token?}
+    R -->|Yes| S[Send Report to Bruni API]
+    R -->|No| T[Post PR Comment]
+    S --> T
+    T --> U[Close Stagehand Browser]
+    U --> V[End]
 ```
 
-## Proposed TypeScript Workflow (Parallelized)
+## TypeScript Workflow (Current Implementation)
 
 ```mermaid
 graph TD
@@ -202,7 +198,7 @@ graph TB
     end
 
     subgraph "Service Layer"
-        SV1[Playwright Service]
+        SV1[Stagehand Service]
         SV2[OpenAI Service]
         SV3[GitHub Service]
         SV4[Bruni API Service]
@@ -271,56 +267,41 @@ graph TD
     G --> M
 ```
 
-## Comparison: Current vs Proposed
+## Processing Flow
 
-### Current (Python)
+### Current Implementation (TypeScript)
+
 ```mermaid
 graph LR
-    A[Sequential Processing] --> B[Page 1]
+    A[Sequential Page Processing] --> B[Page 1]
     B --> C[Page 2]
     C --> D[Page 3]
     D --> E[All Pages Done]
-    E --> F[Sequential Analysis]
-    F --> G[Report]
+    E --> F[Generate Report]
+    F --> G[Post PR Comment]
 ```
 
-### Proposed (TypeScript)
-```mermaid
-graph LR
-    A[Parallel Processing] --> B[Page 1]
-    A --> C[Page 2]
-    A --> D[Page 3]
-    B --> E[Analysis]
-    C --> E
-    D --> E
-    E --> F[Report]
-```
+**Note**: Pages are processed sequentially to avoid race conditions with browser automation. Each page goes through the complete analysis pipeline before moving to the next page.
 
-## Performance Comparison
+## Technology Stack
 
-| Aspect | Current (Python) | Proposed (TypeScript) |
-|--------|------------------|----------------------|
-| **Page Processing** | Sequential | Parallel |
-| **Observability** | Logging only | Built-in traces & metrics |
-| **Error Recovery** | Manual retries | Automatic retry logic |
-| **State Persistence** | None | Automatic state saving |
-| **Type Safety** | Runtime checks | Compile-time checks |
-| **Image Processing** | PIL (slower) | Sharp (faster) |
+| Aspect                 | Implementation                                                  |
+| ---------------------- | --------------------------------------------------------------- |
+| **Language**           | TypeScript                                                      |
+| **Runtime**            | Node.js 20+                                                     |
+| **Browser Automation** | Stagehand (@browserbasehq/stagehand) - uses Playwright browsers |
+| **Image Processing**   | Sharp + pixelmatch                                              |
+| **AI Analysis**        | OpenAI GPT-4 Vision API                                         |
+| **GitHub Integration** | @octokit/rest                                                   |
+| **Testing**            | Vitest                                                          |
+| **Build Tool**         | TypeScript Compiler (tsc)                                       |
 
-## Migration Path Visualization
+## Architecture Overview
 
-```mermaid
-graph TD
-    A[Current Python App] --> B[Phase 1: Setup]
-    B --> C[Phase 2: Core Utils]
-    C --> D[Phase 3: Services]
-    D --> E[Phase 4: Steps]
-    E --> F[Phase 5: Workflow]
-    F --> G[Phase 6: Testing]
-    G --> H[Phase 7: Deployment]
-    H --> I[New TypeScript App]
+The TypeScript implementation provides:
 
-    A -.->|Running in Parallel| J[Python Version]
-    J -.->|Gradual Migration| I
-```
-
+- **Type Safety**: Full TypeScript support with compile-time type checking
+- **Modern Tooling**: Uses Vitest for testing, Sharp for image processing
+- **Browser Automation**: Stagehand provides AI-powered browser control
+- **Better Performance**: Sharp is faster than PIL for image operations
+- **Maintainability**: Clear module structure and type definitions

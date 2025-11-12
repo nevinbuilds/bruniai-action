@@ -1,68 +1,44 @@
 # Getting Started
 
-This guide will help you set up and start using the Visual Regression Testing tool locally using Python.
+This guide will help you set up and start using the Visual Regression Testing tool locally. This is a TypeScript-based application that runs on Node.js.
 
 ## Prerequisites
 
-- Python 3.10 or higher
-- Node.js and npm
+- Node.js 20 or higher
+- npm (comes with Node.js)
 - Git
 - OpenAI API key
 
 ## Installation Steps
 
-We highly recommend using the automated setup script for a smoother experience.
-
-1.  **Run the Setup Script (Recommended)**
-
-    ```bash
-    ./scripts/setup.sh
-    ```
-
-    This script will perform all the necessary installation steps, from setting up the Python virtual environment to installing Playwright browsers.
-
-    After running the script, please proceed to step 8 (Set Up Environment Variables) if you haven't already.
-
-2.  **Clone the Repository**
+1.  **Clone the Repository**
 
     ```bash
     git clone <repository-url>
     cd <repository-name>
     ```
 
-3.  **Set Up Python Virtual Environment**
+2.  **Install Dependencies**
 
     ```bash
-    python3 -m venv venv310
-    source venv310/bin/activate  # On Windows, use: venv310\Scripts\activate
-    # IMPORTANT: Ensure your virtual environment is activated before proceeding with the following steps.
+    npm install
     ```
 
-4.  **Install Python Dependencies**
+3.  **Build TypeScript**
 
     ```bash
-    pip install -r requirements.txt
+    npm run build
     ```
 
-5.  **Install the Package in Development Mode**
+4.  **Install Playwright Browsers**
 
     ```bash
-    pip install -e .
+    npx playwright install --with-deps chromium
     ```
 
-6.  **Install Playwright MCP**
+    **Note**: Playwright browsers are required because Stagehand uses Playwright under the hood for browser automation.
 
-    ```bash
-    npm install -g @playwright/mcp
-    ```
-
-7.  **Install Playwright Browsers**
-
-    ```bash
-    npx playwright install
-    ```
-
-8.  **Set Up Environment Variables**
+5.  **Set Up Environment Variables**
     Create a `.env` file in the root directory and add your OpenAI API key:
 
     ```
@@ -73,26 +49,28 @@ We highly recommend using the automated setup script for a smoother experience.
 
     - `GITHUB_TOKEN` – for posting PR comments
     - `BRUNI_TOKEN` and `BRUNI_API_URL` – for Bruni API integration
+    - `GITHUB_REPOSITORY` – repository identifier (e.g., `owner/repo`)
+    - `PR_NUMBER` – pull request number (if not provided, will be inferred from GitHub event)
 
 ## Running the Visual Tests
 
-1. **Start the MCP Server**
+1. **Run the Visual Regression Tests**
 
-   If you ran the `setup.sh` script, the MCP server should already be running in the background. If you need to start it manually or in a separate terminal tab, use the following command:
-
-   ```bash
-   npx @playwright/mcp@latest --port 8931
-   ```
-
-2. **Run the Visual Regression Tests**
-
-   You can run the tests with either of the following commands:
+   You can run the tests using the built JavaScript:
 
    ```bash
-   GITHUB_TOKEN=<github-token> python src/runner/__main__.py --base-url <production-url> --pr-url <pull-request-url> --pages '<pages>'
+   GITHUB_TOKEN=<github-token> node dist/index.js --base-url <production-url> --pr-url <pull-request-url> --pages '<pages>'
    ```
 
-   The github token is needed to write to the bruni comment to the PR.
+   Or run directly with TypeScript (for development):
+
+   ```bash
+   GITHUB_TOKEN=<github-token> npm run dev -- --base-url <production-url> --pr-url <pull-request-url> --pages '<pages>'
+   ```
+
+   The GitHub token is needed to write comments to the PR.
+
+   **Note**: The pages parameter should be a comma-separated list of paths (e.g., `"/,/about,/contact"`).
 
 ## Understanding the Output
 
@@ -102,19 +80,10 @@ The tool will:
 2. Compare the images and highlight differences
 3. Generate a report with the findings
 4. Provide AI-powered analysis of the changes
+5. Post a comment to the GitHub PR with the results
 
 ## Next Steps
 
 - Review the [Configuration Guide](configuration.md) to customize the testing behavior
 - Check out [Usage Examples](usage-examples.md) for more advanced scenarios
-- Learn about the [Architecture](architecture.md) to understand how the tool works
-
-## Post-Installation
-
-After the installation steps (either via script or manually) are complete, you must activate the virtual environment in your terminal before running any Python commands.
-
-```bash
-source venv310/bin/activate
-```
-
-Once activated, you can proceed with running the visual tests as described in the next section.
+- Learn about the [Architecture](architecture-diagram.md) to understand how the tool works
