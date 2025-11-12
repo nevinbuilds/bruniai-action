@@ -14,13 +14,15 @@ interface Args {
  */
 export function parseArgs(): Args {
   const args: Record<string, string> = {};
-  for (let i = 2; i < process.argv.length; i += 2) {
-    const key = process.argv[i];
-    const value = process.argv[i + 1];
-    if (key?.startsWith("--")) {
-      const argName = key.slice(2).replace(/-/g, "");
+  for (let i = 2; i < process.argv.length; i++) {
+    const arg = process.argv[i];
+    if (arg?.startsWith("--")) {
+      const argName = arg.slice(2).replace(/-/g, "");
+      // Check if next argument exists and is not another flag
+      const value = process.argv[i + 1];
       if (value && !value.startsWith("--")) {
         args[argName] = value;
+        i++; // Skip the value in next iteration
       }
     }
   }

@@ -105,7 +105,7 @@ async function main() {
     );
 
     // Act on the page
-    await stagehand.act("Click the learn more button");
+    // await stagehand.act("Click the learn more button");
 
     // Extract structured data
     const extractedDescription = await stagehand.extract(
