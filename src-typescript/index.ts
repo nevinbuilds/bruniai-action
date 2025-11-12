@@ -14,6 +14,11 @@ import {
   takeSectionScreenshot,
 } from "./sections/sectionExtraction.js";
 import { analyzeImagesWithVision } from "./vision/index.js";
+import {
+  BruniReporter,
+  parseMultiPageAnalysisResults,
+  encodeImageCompressed,
+} from "./reporter/index.js";
 
 async function main() {
   // Parse command-line arguments
@@ -69,14 +74,41 @@ async function main() {
     fs.mkdirSync(imagesDir, { recursive: true });
   }
 
+  // Initialize Bruni reporter if token is available
+  const bruniToken = process.env.BRUNI_TOKEN || args.bruniToken || null;
+  const bruniApiUrl =
+    process.env.BRUNI_API_URL ||
+    args.bruniApiUrl ||
+    "https://bruniai-app.vercel.app/api/tests";
+
+  let bruniReporter: BruniReporter | null = null;
+  if (bruniToken) {
+    bruniReporter = new BruniReporter(bruniToken, bruniApiUrl);
+    console.log("Bruni reporter initialized");
+  } else {
+    console.log(
+      "No Bruni token provided (neither in .env nor as argument), reporting will be skipped"
+    );
+  }
+
   // Initialize stagehand once before processing pages.
   await stagehand.init();
 
-  // Store all analyses for final summary
+  // Store all analyses and page results for final summary and reporting
   const allAnalyses: Array<{
     page_path: string;
     visual_analysis: Awaited<ReturnType<typeof analyzeImagesWithVision>>;
     sections_analysis: string;
+  }> = [];
+
+  const allResults: Array<{
+    page_path: string;
+    base_url: string;
+    pr_url: string;
+    base_screenshot: string;
+    pr_screenshot: string;
+    diff_output_path: string;
+    section_screenshots: Record<string, { base: string; pr: string }>;
   }> = [];
 
   // Process each page sequentially to avoid race conditions.
@@ -205,6 +237,20 @@ async function main() {
       visual_analysis: visualAnalysis,
       sections_analysis: sectionsAnalysis,
     });
+
+    // Store page results for Bruni reporting
+    allResults.push({
+      page_path: page,
+      base_url: baseUrl,
+      pr_url: prUrl,
+      base_screenshot: path.join(
+        imagesDir,
+        `base_screenshot_${pageSuffix}.png`
+      ),
+      pr_screenshot: path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
+      diff_output_path: path.join(imagesDir, `diff_${pageSuffix}.png`),
+      section_screenshots: sectionScreenshots,
+    });
   }
 
   // Close stagehand after all pages are processed.
@@ -239,6 +285,156 @@ async function main() {
       `</details>\n\n`;
 
     finalSummary += pageSummary;
+  }
+
+  // Send report to Bruni API if configured and get the report URL
+  let reportUrl: string | null = null;
+  if (bruniReporter) {
+    try {
+      // Prepare page results with image references.
+      const pageResults: Array<{
+        page_path: string;
+        base_url: string;
+        pr_url: string;
+        visual_analysis: Awaited<ReturnType<typeof analyzeImagesWithVision>>;
+        sections_analysis: string;
+        image_refs: {
+          base_screenshot?: string | null;
+          pr_screenshot?: string | null;
+          diff_image?: string | null;
+          section_screenshots?: Record<
+            string,
+            { base: string; pr: string }
+          > | null;
+        };
+      }> = [];
+      const maxSectionScreenshots = parseInt(
+        process.env.BRUNI_MAX_SECTION_SCREENSHOTS || "6",
+        10
+      );
+
+      for (let i = 0; i < allAnalyses.length; i++) {
+        const pageAnalysis = allAnalyses[i];
+        const pageResult = allResults[i];
+
+        // Create image references with compressed base64 data.
+        const imageRefs: {
+          base_screenshot?: string | null;
+          pr_screenshot?: string | null;
+          diff_image?: string | null;
+          section_screenshots?: Record<
+            string,
+            { base: string; pr: string }
+          > | null;
+        } = {
+          base_screenshot: await encodeImageCompressed(
+            pageResult.base_screenshot,
+            "WEBP",
+            1200,
+            60
+          ),
+          pr_screenshot: await encodeImageCompressed(
+            pageResult.pr_screenshot,
+            "WEBP",
+            1200,
+            60
+          ),
+          diff_image: await encodeImageCompressed(
+            pageResult.diff_output_path,
+            "WEBP",
+            1200,
+            70
+          ),
+        };
+
+        // Add section screenshots if available.
+        // Limit the number to prevent payload from becoming too large.
+        if (
+          pageResult.section_screenshots &&
+          Object.keys(pageResult.section_screenshots).length > 0
+        ) {
+          const sectionScreenshotsEncoded: Record<
+            string,
+            { base: string; pr: string }
+          > = {};
+          let idx = 0;
+          for (const [sectionId, screenshots] of Object.entries(
+            pageResult.section_screenshots
+          )) {
+            if (idx >= maxSectionScreenshots) {
+              console.log(
+                `Limiting section screenshots to ${maxSectionScreenshots} to reduce payload size.`
+              );
+              break;
+            }
+
+            sectionScreenshotsEncoded[sectionId] = {
+              base: await encodeImageCompressed(
+                screenshots.base,
+                "WEBP",
+                1000,
+                60
+              ),
+              pr: await encodeImageCompressed(screenshots.pr, "WEBP", 1000, 60),
+            };
+            idx++;
+          }
+          imageRefs.section_screenshots = sectionScreenshotsEncoded;
+        }
+
+        // Create page result with all necessary data
+        pageResults.push({
+          page_path: pageResult.page_path,
+          base_url: pageResult.base_url,
+          pr_url: pageResult.pr_url,
+          visual_analysis: pageAnalysis.visual_analysis,
+          sections_analysis: pageAnalysis.sections_analysis,
+          image_refs: imageRefs,
+        });
+      }
+
+      // Create multi-page report
+      const multiPageReport = parseMultiPageAnalysisResults(
+        prNumber?.toString() || "",
+        repo || "",
+        pageResults
+      );
+
+      // Send multi-page report
+      const apiResponse = await bruniReporter.sendMultiPageReport(
+        multiPageReport
+      );
+
+      // Extract report ID from API response and construct URL
+      if (apiResponse && apiResponse.length > 0) {
+        const firstResponse = apiResponse[0];
+        if (firstResponse.test && typeof firstResponse.test === "object") {
+          const testObj = firstResponse.test as Record<string, any>;
+          const reportId = testObj.id;
+          if (reportId) {
+            // Remove the /api/tests part and add /test/{id}
+            const baseApiUrl = bruniApiUrl
+              .replace("/api/tests", "")
+              .replace(/\/$/, "");
+            reportUrl = `${baseApiUrl}/test/${reportId}`;
+            console.log(`Report available at: ${reportUrl}`);
+          }
+        }
+        if (!reportUrl) {
+          console.warn(
+            `No report ID found in API response: ${JSON.stringify(apiResponse)}`
+          );
+          console.debug(`Full API response: ${JSON.stringify(apiResponse)}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to send report to Bruni API: ${error}`);
+    }
+  }
+
+  // Add report URL to the summary if available
+  if (reportUrl) {
+    finalSummary += `\n\n📊 **Complete Report**: [View detailed analysis](${reportUrl})`;
   }
 
   // Post to GitHub
