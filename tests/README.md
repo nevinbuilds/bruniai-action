@@ -2,45 +2,87 @@
 
 ## Setup
 
-1. Create and activate a virtual environment:
+1. Install dependencies:
    ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-2. Install dependencies:
-   ```bash
-   python3 -m pip install -r requirements.txt -r requirements-dev.txt
+   npm install
    ```
 
 ## Running Tests
 
 - Run all tests:
   ```bash
-  pytest
-  ```
+  npm test
+   ```
+- Run tests in watch mode:
+  ```bash
+  npm test -- --watch
+   ```
 - Run a specific test file:
   ```bash
-  pytest tests/unit/test_types.py
-  ```
+  npm test tests/unit/test_types.test.ts
+   ```
+- Run tests with UI:
+  ```bash
+  npm run test:ui
+   ```
 
 ## Coverage
 
 - Run tests with coverage report:
   ```bash
-  pytest --cov=src --cov-report=term-missing
-  ```
-- Generate an HTML coverage report:
-  ```bash
-  pytest --cov=src --cov-report=html
-  open htmlcov/index.html
-  ```
+  npm run test:coverage
+   ```
 
 ## Adding New Tests
 
 - Place unit tests in `tests/unit/`
 - Place integration tests in `tests/integration/`
-- Name test files as `test_*.py`
-- Use `pytest` conventions for test functions/classes
+- Name test files as `*.test.ts`
+- Use Vitest conventions for test functions:
+  ```typescript
+  import { describe, it, expect } from "vitest";
+
+  describe("MyFunction", () => {
+    it("should do something", () => {
+      expect(true).toBe(true);
+    });
+  });
+  ```
+
+## Test Patterns
+
+### Mocking Modules
+```typescript
+import { vi } from "vitest";
+
+vi.mock("../../src-typescript/module.js", () => ({
+  functionName: vi.fn().mockReturnValue("value"),
+}));
+```
+
+### Mocking Environment Variables
+```typescript
+import { vi } from "vitest";
+
+vi.stubEnv("GITHUB_REPOSITORY", "org/repo");
+```
+
+### Mocking Fetch
+```typescript
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  status: 200,
+  json: async () => ({ data: "value" }),
+});
+```
+
+### Async Tests
+```typescript
+it("should handle async operations", async () => {
+  const result = await myAsyncFunction();
+  expect(result).toBeDefined();
+});
+```
 
 ## CI
 

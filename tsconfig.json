@@ -21,7 +21,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src-typescript/**/*"],
+  "include": ["src-typescript/**/*", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist", "venv310", "htmlcov", "*.egg-info"]
 }
 
