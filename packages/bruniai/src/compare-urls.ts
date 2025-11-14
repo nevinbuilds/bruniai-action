@@ -8,13 +8,27 @@ import { tmpdir } from "os";
 /**
  * Compare two URLs visually and return analysis results.
  *
- * This function wraps the core comparison logic with MCP-specific setup:
+ * This function performs a complete visual comparison workflow:
  * - Creates a temporary directory for images
- * - Manages Stagehand lifecycle
- * - Formats output for MCP tool response
+ * - Initializes and manages Stagehand browser automation
+ * - Takes screenshots of both URLs
+ * - Generates diff images
+ * - Analyzes sections structure
+ * - Performs AI-powered visual analysis
+ * - Captures section screenshots
  *
  * @param input - Comparison input parameters
  * @returns Complete analysis results with image paths
+ *
+ * @example
+ * ```typescript
+ * const result = await compareUrls({
+ *   baseUrl: "https://example.com",
+ *   previewUrl: "https://preview.example.com",
+ *   page: "/contact"
+ * });
+ * console.log(result.status); // "pass" | "fail" | "warning" | "none"
+ * ```
  */
 export async function compareUrls(
   input: CompareUrlsInput
@@ -45,10 +59,13 @@ export async function compareUrls(
       previewUrl,
       page,
       imagesDir,
-      // MCP doesn't need PR metadata.
+      prNumber: input.prNumber,
+      repository: input.repository,
+      prTitle: input.prTitle,
+      prDescription: input.prDescription,
     });
 
-    // Build output structure matching MCP tool format.
+    // Build output structure.
     const output: CompareUrlsOutput = {
       status: result.visual_analysis.status,
       visual_analysis: result.visual_analysis,
@@ -76,3 +93,4 @@ export async function compareUrls(
     await stagehand.close();
   }
 }
+

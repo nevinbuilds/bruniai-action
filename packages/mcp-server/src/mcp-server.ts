@@ -3,8 +3,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { compareUrls } from "./comparison-service.js";
-import type { CompareUrlsInput } from "./types.js";
+import { compareUrls, type CompareUrlsInput } from "bruniai";
 
 /**
  * MCP Server for BruniAI visual comparison functionality.

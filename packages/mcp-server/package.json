@@ -1,5 +1,5 @@
 {
-  "name": "bruniai-mcp",
+  "name": "bruniai-mcp-server",
   "version": "0.1.0",
   "type": "module",
   "description": "MCP server for BruniAI visual comparison functionality",
@@ -13,23 +13,13 @@
     "dev": "tsx src/mcp-server.ts"
   },
   "dependencies": {
-    "@browserbasehq/stagehand": "^3.0.1",
     "@modelcontextprotocol/sdk": "^1.21.1",
-    "dotenv": "^16.0.0",
-    "pixelmatch": "^7.1.0",
-    "playwright": "^1.42.1",
-    "pngjs": "^7.0.0",
-    "sharp": "^0.34.5",
-    "uuid": "^10.0.0",
+    "bruniai": "file:../bruniai",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
-    "@types/pixelmatch": "^5.2.6",
-    "@types/pngjs": "^6.0.5",
-    "@types/uuid": "^10.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.5.4"
   }
 }
-
