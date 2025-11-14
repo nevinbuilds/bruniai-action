@@ -7,19 +7,14 @@ import {
   postPrComment,
 } from "./github/pr-comments.js";
 import { parseArgs } from "./args.js";
-import { generateDiffImage } from "./diff/diff.js";
-import { analyzeSectionsSideBySide } from "./sections/sections.js";
-import {
-  extractSectionBoundingBoxes,
-  takeSectionScreenshot,
-} from "./sections/sectionExtraction.js";
-import { analyzeImagesWithVision } from "./vision/index.js";
+import { performComparison } from "./comparison/core.js";
 import {
   BruniReporter,
   parseMultiPageAnalysisResults,
   encodeImageCompressed,
 } from "./reporter/index.js";
 import { ensureViewportSize } from "./utils/window.js";
+import type { VisualAnalysisResult } from "./vision/types.js";
 
 async function main() {
   // Parse command-line arguments
@@ -102,7 +97,7 @@ async function main() {
   // Store all analyses and page results for final summary and reporting
   const allAnalyses: Array<{
     page_path: string;
-    visual_analysis: Awaited<ReturnType<typeof analyzeImagesWithVision>>;
+    visual_analysis: VisualAnalysisResult;
     sections_analysis: string;
   }> = [];
 
@@ -120,141 +115,54 @@ async function main() {
   for (const page of pages) {
     console.log("Processing page ------ ", page);
 
-    // Construct full URLs for this page
+    // Construct full URLs for this page.
     const baseUrl = args.baseUrl!.replace(/\/$/, "") + page;
     const prUrl = args.prUrl!.replace(/\/$/, "") + page;
 
     console.log(`Base URL: ${baseUrl}`);
     console.log(`PR URL: ${prUrl}`);
 
-    // Define screenshot paths with page-specific names
-    // Remove all slashes for file suffix, or use 'home' for root
-    let pageSuffix = page.replace(/\//g, "_");
-    pageSuffix = pageSuffix === "_" ? "home" : pageSuffix;
-
-    // Ensure viewport is set correctly before navigating and taking screenshot.
-    await ensureViewportSize(initialPage, baseUrl);
-
-    const baseScreenshot = await initialPage.screenshot({
-      fullPage: true,
+    // Perform the core comparison using shared function.
+    const result = await performComparison({
+      stagehand,
+      baseUrl: args.baseUrl!,
+      previewUrl: args.prUrl!,
+      page,
+      imagesDir,
+      prNumber: prNumber?.toString(),
+      repository: repo || undefined,
+      prTitle: title || undefined,
+      prDescription: description || undefined,
     });
 
-    fs.writeFileSync(
-      path.join(imagesDir, `base_screenshot_${pageSuffix}.png`),
-      baseScreenshot
-    );
+    console.log("Visual analysis completed:", result.visual_analysis.status);
 
-    // Ensure viewport is set correctly before navigating to PR URL and taking screenshot.
-    await ensureViewportSize(initialPage, prUrl);
-
-    const prScreenshot = await initialPage.screenshot({
-      fullPage: true,
-    });
-
-    fs.writeFileSync(
-      path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
-      prScreenshot
-    );
-
-    await generateDiffImage(
-      path.join(imagesDir, `base_screenshot_${pageSuffix}.png`),
-      path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
-      path.join(imagesDir, `diff_${pageSuffix}.png`)
-    );
-
-    // Analyze sections and get formatted analysis output.
-    const sectionsAnalysis = await analyzeSectionsSideBySide(
-      stagehand,
-      baseUrl,
-      prUrl
-    );
-
-    // Extract section bounding boxes with IDs from analysis.
-    const sectionsWithIds = await extractSectionBoundingBoxes(
-      stagehand,
-      baseUrl,
-      sectionsAnalysis
-    );
-    console.log(
-      `Extracted ${sectionsWithIds.length} sections with IDs from ${baseUrl}`
-    );
-
-    // Capture section screenshots for both base and PR URLs.
-    const sectionScreenshots: Record<string, { base: string; pr: string }> = {};
-    for (const section of sectionsWithIds) {
-      const sectionId = section.sectionId;
-
-      // Define section screenshot paths.
-      const baseSectionScreenshot = path.join(
-        imagesDir,
-        `base_screenshot_${pageSuffix}_section_${sectionId}.png`
-      );
-      const prSectionScreenshot = path.join(
-        imagesDir,
-        `pr_screenshot_${pageSuffix}_section_${sectionId}.png`
-      );
-
-      // Take section screenshots using section IDs and analysis data.
-      const baseSectionSuccess = await takeSectionScreenshot(
-        stagehand,
-        baseUrl,
-        baseSectionScreenshot,
-        sectionId,
-        sectionsAnalysis
-      );
-      const prSectionSuccess = await takeSectionScreenshot(
-        stagehand,
-        prUrl,
-        prSectionScreenshot,
-        sectionId,
-        sectionsAnalysis
-      );
-
-      if (baseSectionSuccess && prSectionSuccess) {
-        sectionScreenshots[sectionId] = {
-          base: baseSectionScreenshot,
-          pr: prSectionScreenshot,
-        };
-        console.log(`Captured section screenshots for ${sectionId}`);
-      } else {
-        console.warn(`Failed to capture section screenshots for ${sectionId}`);
-      }
-    }
-
-    // Perform visual analysis with the sections information
-    const visualAnalysis = await analyzeImagesWithVision(
-      path.join(imagesDir, `base_screenshot_${pageSuffix}.png`),
-      path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
-      path.join(imagesDir, `diff_${pageSuffix}.png`),
-      baseUrl,
-      prUrl,
-      prNumber?.toString() || "",
-      repo || "",
-      sectionsAnalysis,
-      title || undefined,
-      description || undefined
-    );
-
-    console.log("Visual analysis completed:", visualAnalysis.status);
-
-    // Store the analysis results
+    // Store the analysis results.
     allAnalyses.push({
       page_path: page,
-      visual_analysis: visualAnalysis,
-      sections_analysis: sectionsAnalysis,
+      visual_analysis: result.visual_analysis,
+      sections_analysis: result.sections_analysis,
     });
 
-    // Store page results for Bruni reporting
+    // Convert section screenshots format from {base, preview} to {base, pr} for compatibility.
+    const sectionScreenshots: Record<string, { base: string; pr: string }> = {};
+    for (const [sectionId, screenshots] of Object.entries(
+      result.section_screenshots
+    )) {
+      sectionScreenshots[sectionId] = {
+        base: screenshots.base,
+        pr: screenshots.preview,
+      };
+    }
+
+    // Store page results for Bruni reporting.
     allResults.push({
       page_path: page,
       base_url: baseUrl,
       pr_url: prUrl,
-      base_screenshot: path.join(
-        imagesDir,
-        `base_screenshot_${pageSuffix}.png`
-      ),
-      pr_screenshot: path.join(imagesDir, `pr_screenshot_${pageSuffix}.png`),
-      diff_output_path: path.join(imagesDir, `diff_${pageSuffix}.png`),
+      base_screenshot: result.base_screenshot,
+      pr_screenshot: result.preview_screenshot,
+      diff_output_path: result.diff_image,
       section_screenshots: sectionScreenshots,
     });
   }
@@ -302,7 +210,7 @@ async function main() {
         page_path: string;
         base_url: string;
         pr_url: string;
-        visual_analysis: Awaited<ReturnType<typeof analyzeImagesWithVision>>;
+        visual_analysis: VisualAnalysisResult;
         sections_analysis: string;
         image_refs: {
           base_screenshot?: string | null;
