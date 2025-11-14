@@ -11,4 +11,3 @@ export type {
   CompareUrlsOutput,
   ComparisonImages,
 } from "./types.js";
-
