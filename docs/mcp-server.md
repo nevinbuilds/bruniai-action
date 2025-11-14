@@ -286,6 +286,15 @@ Images are stored in a temporary directory created for each comparison:
 ```bash
 git clone <repository-url>
 cd bruniai
+
+# Install dependencies
+npm install
+
+# Build the main package first (required for MCP subpackage)
+npm run build
+
+# Build the MCP subpackage
+cd packages/mcp-server
 npm install
 npm run build
 ```
@@ -293,6 +302,8 @@ npm run build
 ### Running Locally
 
 ```bash
+# From the MCP subpackage directory
+cd packages/mcp-server
 npm run build
 node dist/mcp-server.js
 ```

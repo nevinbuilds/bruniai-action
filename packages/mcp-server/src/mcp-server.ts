@@ -3,8 +3,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { compareUrls } from "./mcp/comparison-service.js";
-import type { CompareUrlsInput } from "./mcp/types.js";
+import { compareUrls } from "./comparison-service.js";
+import type { CompareUrlsInput } from "./types.js";
 
 /**
  * MCP Server for BruniAI visual comparison functionality.
@@ -41,12 +41,8 @@ async function main() {
         "and performs AI-powered visual analysis. Returns analysis " +
         "results with paths to generated images.",
       inputSchema: {
-        baseUrl: z
-          .string()
-          .describe("Base/reference URL to compare against"),
-        previewUrl: z
-          .string()
-          .describe("Preview/changed URL to analyze"),
+        baseUrl: z.string().describe("Base/reference URL to compare against"),
+        previewUrl: z.string().describe("Preview/changed URL to analyze"),
         page: z
           .string()
           .default("/")
@@ -69,9 +65,7 @@ async function main() {
 
         // Validate OPENAI_API_KEY is set.
         if (!process.env.OPENAI_API_KEY) {
-          throw new Error(
-            "OPENAI_API_KEY environment variable is required"
-          );
+          throw new Error("OPENAI_API_KEY environment variable is required");
         }
 
         // Perform comparison.
@@ -120,4 +114,3 @@ main().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-

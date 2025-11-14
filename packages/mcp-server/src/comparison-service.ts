@@ -1,5 +1,5 @@
 import { Stagehand } from "@browserbasehq/stagehand";
-import { performComparison } from "../comparison/core.js";
+import { performComparison } from "../../../dist/comparison/core.js";
 import type { CompareUrlsInput, CompareUrlsOutput } from "./types.js";
 import { join } from "path";
 import { mkdirSync, existsSync } from "fs";

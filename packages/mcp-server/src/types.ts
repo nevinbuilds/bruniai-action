@@ -1,4 +1,4 @@
-import type { VisualAnalysisResult } from "../vision/types.js";
+import type { VisualAnalysisResult } from "../../../dist/vision/types.js";
 
 /**
  * Input parameters for compare_urls tool.
@@ -28,4 +28,3 @@ export interface CompareUrlsOutput {
   sections_analysis: string;
   images: ComparisonImages;
 }
-

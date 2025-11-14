@@ -1,21 +1,20 @@
 {
-  "name": "bruniai",
+  "name": "bruniai-mcp",
   "version": "0.1.0",
   "type": "module",
-  "description": "AI-powered visual regression testing tool",
+  "description": "MCP server for BruniAI visual comparison functionality",
   "author": "Joao Garin",
   "license": "MIT",
+  "bin": {
+    "bruniai-mcp-server": "./dist/mcp-server.js"
+  },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "dev": "tsx src/mcp-server.ts"
   },
   "dependencies": {
     "@browserbasehq/stagehand": "^3.0.1",
-    "@playwright/mcp": "^0.0.13",
+    "@modelcontextprotocol/sdk": "^1.21.1",
     "dotenv": "^16.0.0",
     "pixelmatch": "^7.1.0",
     "playwright": "^1.42.1",
@@ -25,15 +24,12 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.51.1",
     "@types/node": "^20.11.24",
     "@types/pixelmatch": "^5.2.6",
     "@types/pngjs": "^6.0.5",
     "@types/uuid": "^10.0.0",
-    "@vitest/coverage-v8": "^4.0.8",
-    "@vitest/ui": "^4.0.8",
     "tsx": "^4.7.0",
-    "typescript": "^5.5.4",
-    "vitest": "^4.0.8"
+    "typescript": "^5.5.4"
   }
 }
+
