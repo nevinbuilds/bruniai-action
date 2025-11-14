@@ -1,6 +1,6 @@
 {
   "name": "bruniai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "AI-powered visual regression testing tool - core comparison library",
   "author": "Joao Garin",
@@ -43,4 +43,3 @@
     "@browserbasehq/stagehand": "^3.0.1"
   }
 }
-
