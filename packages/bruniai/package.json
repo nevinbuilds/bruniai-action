@@ -2,25 +2,27 @@
   "name": "bruniai",
   "version": "0.1.2",
   "type": "module",
-  "description": "AI-powered visual regression testing tool",
+  "description": "AI-powered visual regression testing tool - core comparison library",
   "author": "Joao Garin",
   "license": "MIT",
-  "workspaces": [
-    "packages/*"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
-    "test": "vitest --run",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "deploy": "node scripts/deploy.js",
-    "deploy:dry-run": "node scripts/deploy.js --dry-run"
+    "dev": "tsx src/index.ts"
   },
   "dependencies": {
     "@browserbasehq/stagehand": "^3.0.1",
-    "@playwright/mcp": "^0.0.13",
     "dotenv": "^16.0.0",
     "pixelmatch": "^7.1.0",
     "playwright": "^1.42.1",
@@ -30,15 +32,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.51.1",
     "@types/node": "^20.11.24",
     "@types/pixelmatch": "^5.2.6",
     "@types/pngjs": "^6.0.5",
     "@types/uuid": "^10.0.0",
-    "@vitest/coverage-v8": "^4.0.8",
-    "@vitest/ui": "^4.0.8",
     "tsx": "^4.7.0",
-    "typescript": "^5.5.4",
-    "vitest": "^4.0.8"
+    "typescript": "^5.5.4"
+  },
+  "peerDependencies": {
+    "@browserbasehq/stagehand": "^3.0.1"
   }
 }
