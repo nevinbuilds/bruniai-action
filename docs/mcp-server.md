@@ -1,0 +1,319 @@
+# BruniAI MCP Server
+
+The BruniAI MCP (Model Context Protocol) server exposes visual comparison functionality as a tool that can be used within Cursor and other MCP-compatible applications.
+
+## Overview
+
+The MCP server provides a single tool `compare_urls` that performs comprehensive visual analysis between two URLs:
+
+- Takes full-page screenshots of both URLs
+- Generates diff images highlighting differences
+- Analyzes page structure and sections
+- Performs AI-powered visual analysis
+- Returns structured results with image file paths
+
+## Installation
+
+### Global Installation (Recommended)
+
+Install the package globally to make the MCP server available system-wide:
+
+```bash
+npm install -g bruniai
+```
+
+After installation, verify the server is available:
+
+```bash
+bruniai-mcp-server --version
+```
+
+### Local Installation
+
+For local development or project-specific installation:
+
+```bash
+npm install bruniai
+```
+
+Then run the server using:
+
+```bash
+npx bruniai-mcp-server
+```
+
+## Configuration
+
+### Environment Variables
+
+The MCP server requires the following environment variable:
+
+- `OPENAI_API_KEY` (required): Your OpenAI API key for GPT-4 Vision analysis
+
+Set it before running the server:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key-here"
+bruniai-mcp-server
+```
+
+### Cursor Configuration
+
+To use the BruniAI MCP server in Cursor, add it to your Cursor MCP configuration file.
+
+#### Configuration File Location
+
+The configuration file location depends on your operating system:
+
+- **macOS**: `~/Library/Application Support/Cursor/User/globalStorage/mcp.json`
+- **Windows**: `%APPDATA%\Cursor\User\globalStorage\mcp.json`
+- **Linux**: `~/.config/Cursor/User/globalStorage/mcp.json`
+
+#### Configuration Format
+
+Add the following to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "bruniai": {
+      "command": "bruniai-mcp-server",
+      "env": {
+        "OPENAI_API_KEY": "sk-your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+**Note**: If you installed globally, use `bruniai-mcp-server`. If installed locally, use the full path or `npx bruniai-mcp-server`.
+
+#### Alternative: Using Environment Variables
+
+You can also set the environment variable in your shell profile instead of in the config:
+
+```json
+{
+  "mcpServers": {
+    "bruniai": {
+      "command": "bruniai-mcp-server"
+    }
+  }
+}
+```
+
+Then ensure `OPENAI_API_KEY` is set in your environment before starting Cursor.
+
+## Usage
+
+Once configured, the `compare_urls` tool will be available in Cursor. You can invoke it through natural language or direct tool calls.
+
+### Tool Schema
+
+**Name**: `compare_urls`
+
+**Description**: Compare two URLs visually and analyze differences. Takes screenshots, generates diff images, analyzes sections, and performs AI-powered visual analysis. Returns analysis results with paths to generated images.
+
+**Input Parameters**:
+
+- `baseUrl` (string, required): Base/reference URL to compare against
+- `previewUrl` (string, required): Preview/changed URL to analyze
+- `page` (string, optional): Page path to compare (default: "/")
+
+**Output**:
+
+The tool returns a JSON object with the following structure:
+
+```typescript
+{
+  status: "pass" | "fail" | "warning",
+  visual_analysis: {
+    // Complete visual analysis result
+    status: "pass" | "fail" | "warning",
+    critical_issues: {
+      sections: Array<{
+        name: string,
+        status: "Present" | "Missing",
+        description: string,
+        section_id: string
+      }>,
+      summary: string
+    },
+    structural_analysis: {
+      section_order: string,
+      layout: string,
+      broken_layouts: string
+    },
+    visual_changes: {
+      diff_highlights: string[],
+      animation_issues: string,
+      conclusion: string
+    },
+    conclusion: {
+      critical_issues: string,
+      visual_changes: string,
+      recommendation: "pass" | "review_required" | "reject",
+      summary: string
+    }
+    // ... additional fields
+  },
+  sections_analysis: string,  // Formatted text analysis
+  images: {
+    base_screenshot: string,      // File path
+    preview_screenshot: string,     // File path
+    diff_image: string,             // File path
+    section_screenshots?: {         // Optional
+      [sectionId: string]: {
+        base: string,               // File path
+        preview: string             // File path
+      }
+    }
+  }
+}
+```
+
+### Example Usage in Cursor
+
+You can ask Cursor to compare URLs:
+
+```
+Compare https://example.com with https://staging.example.com
+```
+
+Or be more specific:
+
+```
+Compare the homepage at https://example.com with https://staging.example.com, focusing on the /about page
+```
+
+### Example Output
+
+```json
+{
+  "status": "pass",
+  "visual_analysis": {
+    "status": "pass",
+    "critical_issues": {
+      "sections": [],
+      "summary": "No critical issues found"
+    },
+    "structural_analysis": {
+      "section_order": "All sections appear in the correct order",
+      "layout": "Layout structure is consistent",
+      "broken_layouts": "No broken layouts detected"
+    },
+    "visual_changes": {
+      "diff_highlights": ["Minor color adjustments in header"],
+      "animation_issues": "No animation issues detected",
+      "conclusion": "Changes are minor and acceptable"
+    },
+    "conclusion": {
+      "critical_issues": "None",
+      "visual_changes": "Minor styling updates",
+      "recommendation": "pass",
+      "summary": "Visual comparison passed. All sections present and layout intact."
+    }
+  },
+  "sections_analysis": "### Base URL Structure:\n...",
+  "images": {
+    "base_screenshot": "/tmp/bruniai-1234567890/base_screenshot_home.png",
+    "preview_screenshot": "/tmp/bruniai-1234567890/preview_screenshot_home.png",
+    "diff_image": "/tmp/bruniai-1234567890/diff_home.png",
+    "section_screenshots": {
+      "hero-section": {
+        "base": "/tmp/bruniai-1234567890/base_screenshot_home_section_hero-section.png",
+        "preview": "/tmp/bruniai-1234567890/preview_screenshot_home_section_hero-section.png"
+      }
+    }
+  }
+}
+```
+
+## How It Works
+
+1. **Screenshot Capture**: Takes full-page screenshots of both URLs using headless browser automation
+2. **Diff Generation**: Creates a visual diff image highlighting pixel differences
+3. **Section Analysis**: Analyzes the page structure to identify major sections
+4. **Visual Analysis**: Uses GPT-4 Vision to analyze screenshots and detect:
+   - Missing sections
+   - Structural changes
+   - Visual differences
+   - Layout issues
+5. **Section Screenshots**: Optionally captures individual section screenshots for detailed comparison
+
+## Image Storage
+
+Images are stored in a temporary directory created for each comparison:
+
+- **Location**: System temp directory (e.g., `/tmp/bruniai-{timestamp}/` on Unix systems)
+- **Naming**: Files are named with page suffix and section IDs
+- **Format**: PNG format for all screenshots and diff images
+- **Cleanup**: Temporary directories are not automatically cleaned up (managed by OS temp cleanup)
+
+## Troubleshooting
+
+### Server Not Starting
+
+- Verify Node.js version (requires Node.js 20+)
+- Check that `OPENAI_API_KEY` is set correctly
+- Ensure the package is installed: `npm list -g bruniai`
+
+### Tool Execution Errors
+
+- Verify both URLs are accessible
+- Check that URLs are valid and reachable
+- Ensure OpenAI API key has sufficient credits/quota
+- Review error messages in the tool response
+
+### Image Path Issues
+
+- Images are stored in temporary directories
+- Paths are absolute file system paths
+- Ensure the temp directory is accessible
+- Files persist until OS temp cleanup runs
+
+### Cursor Integration Issues
+
+- Restart Cursor after configuration changes
+- Verify the MCP server command path is correct
+- Check Cursor logs for connection errors
+- Ensure stdio transport is working correctly
+
+## Development
+
+### Building from Source
+
+```bash
+git clone <repository-url>
+cd bruniai
+npm install
+npm run build
+```
+
+### Running Locally
+
+```bash
+npm run build
+node dist/mcp-server.js
+```
+
+### Testing
+
+Test the MCP server manually:
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/mcp-server.js
+```
+
+## Limitations
+
+- Requires OpenAI API access with GPT-4 Vision capability
+- Browser automation requires Playwright browsers to be installed
+- Comparison operations can take 30-60 seconds depending on page complexity
+- Images are stored temporarily and may be cleaned up by the OS
+- Single page comparison per tool call (use multiple calls for multiple pages)
+
+## Support
+
+For issues, questions, or contributions, please refer to the main project repository.
+

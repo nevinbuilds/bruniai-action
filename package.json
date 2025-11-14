@@ -5,6 +5,9 @@
   "description": "AI-powered visual regression testing tool",
   "author": "Joao Garin",
   "license": "MIT",
+  "bin": {
+    "bruniai-mcp-server": "./dist/mcp-server.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
@@ -15,6 +18,7 @@
   },
   "dependencies": {
     "@browserbasehq/stagehand": "^3.0.1",
+    "@modelcontextprotocol/sdk": "^1.21.1",
     "@playwright/mcp": "^0.0.13",
     "dotenv": "^16.0.0",
     "pixelmatch": "^7.1.0",
