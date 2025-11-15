@@ -61,14 +61,6 @@ bruniai-mcp-server
 
 To use the BruniAI MCP server in Cursor, add it to your Cursor MCP configuration file.
 
-#### Configuration File Location
-
-The configuration file location depends on your operating system:
-
-- **macOS**: `~/Library/Application Support/Cursor/User/globalStorage/mcp.json`
-- **Windows**: `%APPDATA%\Cursor\User\globalStorage\mcp.json`
-- **Linux**: `~/.config/Cursor/User/globalStorage/mcp.json`
-
 #### Configuration Format
 
 Add the following to your MCP configuration:
@@ -87,22 +79,6 @@ Add the following to your MCP configuration:
 ```
 
 **Note**: If you installed globally, use `bruniai-mcp-server`. If installed locally, use the full path or `npx bruniai-mcp-server`.
-
-#### Alternative: Using Environment Variables
-
-You can also set the environment variable in your shell profile instead of in the config:
-
-```json
-{
-  "mcpServers": {
-    "bruniai": {
-      "command": "bruniai-mcp-server"
-    }
-  }
-}
-```
-
-Then ensure `OPENAI_API_KEY` is set in your environment before starting Cursor.
 
 ## Usage
 
@@ -176,57 +152,10 @@ The tool returns a JSON object with the following structure:
 
 You can ask Cursor to compare URLs:
 
-```
-Compare https://example.com with https://staging.example.com
-```
-
 Or be more specific:
 
 ```
-Compare the homepage at https://example.com with https://staging.example.com, focusing on the /about page
-```
-
-### Example Output
-
-```json
-{
-  "status": "pass",
-  "visual_analysis": {
-    "status": "pass",
-    "critical_issues": {
-      "sections": [],
-      "summary": "No critical issues found"
-    },
-    "structural_analysis": {
-      "section_order": "All sections appear in the correct order",
-      "layout": "Layout structure is consistent",
-      "broken_layouts": "No broken layouts detected"
-    },
-    "visual_changes": {
-      "diff_highlights": ["Minor color adjustments in header"],
-      "animation_issues": "No animation issues detected",
-      "conclusion": "Changes are minor and acceptable"
-    },
-    "conclusion": {
-      "critical_issues": "None",
-      "visual_changes": "Minor styling updates",
-      "recommendation": "pass",
-      "summary": "Visual comparison passed. All sections present and layout intact."
-    }
-  },
-  "sections_analysis": "### Base URL Structure:\n...",
-  "images": {
-    "base_screenshot": "/tmp/bruniai-1234567890/base_screenshot_home.png",
-    "preview_screenshot": "/tmp/bruniai-1234567890/preview_screenshot_home.png",
-    "diff_image": "/tmp/bruniai-1234567890/diff_home.png",
-    "section_screenshots": {
-      "hero-section": {
-        "base": "/tmp/bruniai-1234567890/base_screenshot_home_section_hero-section.png",
-        "preview": "/tmp/bruniai-1234567890/preview_screenshot_home_section_hero-section.png"
-      }
-    }
-  }
-}
+For my website  https://www.example.com I have changes in this preview site https://company-example.vercel.app use the bruniai-mcp-server to compare the page : /contact
 ```
 
 ## How It Works
@@ -327,4 +256,3 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/mc
 ## Support
 
 For issues, questions, or contributions, please refer to the main project repository.
-

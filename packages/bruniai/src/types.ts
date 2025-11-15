@@ -1,4 +1,5 @@
 import type { VisualAnalysisResult } from "../../../dist/vision/types.js";
+import type { ReportStatus } from "../../../dist/reporter/types.js";
 
 /**
  * Input parameters for compareUrls function.
@@ -39,7 +40,7 @@ export interface ComparisonImages {
  */
 export interface CompareUrlsOutput {
   /** Overall comparison status. */
-  status: "pass" | "fail" | "warning" | "none";
+  status: ReportStatus;
   /** Visual analysis result from AI. */
   visual_analysis: VisualAnalysisResult;
   /** Formatted sections analysis text. */
@@ -47,4 +48,3 @@ export interface CompareUrlsOutput {
   /** Generated images from comparison. */
   images: ComparisonImages;
 }
-

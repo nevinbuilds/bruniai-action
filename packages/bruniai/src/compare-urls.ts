@@ -27,7 +27,7 @@ import { tmpdir } from "os";
  *   previewUrl: "https://preview.example.com",
  *   page: "/contact"
  * });
- * console.log(result.status); // "pass" | "fail" | "warning" | "none"
+ * console.log(result.status); // "pass" | "fail" | "warning"
  * ```
  */
 export async function compareUrls(
@@ -66,8 +66,14 @@ export async function compareUrls(
     });
 
     // Build output structure.
+    // Convert status from VisualAnalysisResult (which can be "none") to ReportStatus.
+    const status: "pass" | "fail" | "warning" =
+      result.visual_analysis.status === "none"
+        ? "pass"
+        : result.visual_analysis.status;
+
     const output: CompareUrlsOutput = {
-      status: result.visual_analysis.status,
+      status,
       visual_analysis: result.visual_analysis,
       sections_analysis: result.sections_analysis,
       images: {
@@ -93,4 +99,3 @@ export async function compareUrls(
     await stagehand.close();
   }
 }
-

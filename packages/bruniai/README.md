@@ -18,10 +18,10 @@ import { compareUrls } from "bruniai";
 const result = await compareUrls({
   baseUrl: "https://example.com",
   previewUrl: "https://preview.example.com",
-  page: "/contact"
+  page: "/contact",
 });
 
-console.log(result.status); // "pass" | "fail" | "warning" | "none"
+console.log(result.status); // "pass" | "fail" | "warning"
 console.log(result.visual_analysis);
 console.log(result.images.base_screenshot);
 ```
@@ -33,6 +33,7 @@ console.log(result.images.base_screenshot);
 Performs a visual comparison between two URLs.
 
 **Parameters:**
+
 - `baseUrl` (string): Base/reference URL to compare against
 - `previewUrl` (string): Preview/changed URL to analyze
 - `page` (string, optional): Page path to compare (default: "/")
@@ -42,6 +43,7 @@ Performs a visual comparison between two URLs.
 - `prDescription` (string, optional): PR description for context
 
 **Returns:**
+
 - `status`: Overall comparison status ("pass" | "fail" | "warning" | "none")
 - `visual_analysis`: Detailed visual analysis result from AI
 - `sections_analysis`: Formatted sections analysis text
@@ -72,4 +74,3 @@ npm run build
 ## License
 
 MIT
-
