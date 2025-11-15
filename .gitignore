@@ -1,26 +1,18 @@
 
 # Playwright
 node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-
-__pycache__/
 
 # Images
 images/
-
-# Venv
-venv310/
 
 .env
 
 .DS_Store
 
-src/bruniai.egg-info
 
 # TypeScript/Bun build outputs
 dist/
 *.tsbuildinfo
-.bun/
+
+# testing
+/coverage
